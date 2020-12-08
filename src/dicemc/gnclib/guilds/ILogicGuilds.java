@@ -2,7 +2,7 @@ package dicemc.gnclib.guilds;
 
 import java.util.UUID;
 
-public interface LogicGuilds {
+public interface ILogicGuilds {
 
 	static Guild getGuildByID(UUID guild) {
 		// TODO Auto-generated method stub

@@ -1,5 +1,5 @@
 package dicemc.gnclib.trade;
 
-public interface LogicTrade {
+public interface ILogicTrade {
 
 }

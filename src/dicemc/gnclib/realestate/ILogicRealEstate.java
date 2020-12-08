@@ -9,23 +9,26 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import dicemc.gnclib.configs.ConfigCore;
+import dicemc.gnclib.guilds.Guild;
 import dicemc.gnclib.guilds.Guild.permKey;
-import dicemc.gnclib.guilds.LogicGuilds;
+import dicemc.gnclib.guilds.ILogicGuilds;
 import dicemc.gnclib.money.LogicMoney;
+import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ChunkPos3D;
 import dicemc.gnclib.util.ComVars;
 
-public interface LogicRealEstate {
-	Map<ChunkPos3D, ChunkData> cap = new HashMap<ChunkPos3D, ChunkData>();
+public interface ILogicRealEstate {
+	
+	public Map<ChunkPos3D, ChunkData> getCap();
 	
 	public default String updateChunk(ChunkPos3D ck, Map<String, String> values) {
 		//TODO populate switch statement
-		ChunkData cd = cap.getOrDefault(ck, new ChunkData(ck));
+		ChunkData cd = getCap().getOrDefault(ck, new ChunkData(ck));
 		for (Map.Entry<String, String> vals : values.entrySet()) {
 			switch(vals.getKey()) {
 			case "price": {
 				cd.price = Double.valueOf(vals.getValue());
-				System.out.println("price updated" +String.valueOf(cap.get(ck).price));
+				System.out.println("price updated" +String.valueOf(getCap().get(ck).price));
 				break;
 			}
 			case "player": {
@@ -44,43 +47,43 @@ public interface LogicRealEstate {
 			default: return "Key Unrecognized" + vals.getKey();
 			}
 		}
-		cap.put(ck, cd);
+		getCap().put(ck, cd);
 		return "Success";
 	}
 	
-	public default ChunkData getChunk(ChunkPos3D pos) {return cap.get(pos);}
+	public default ChunkData getChunk(ChunkPos3D pos) {return getCap().get(pos);}
 	
 	public default String setWhitelist(ChunkPos3D ck, Map<String, WhitelistEntry> whitelist) {
-		cap.get(ck).whitelist = whitelist;
+		getCap().get(ck).whitelist = whitelist;
 		if (whitelist.size() == 0) return "Whitelist Cleared";
 		return "Whitelist Set";
 	}
 	
 	public default String updateWhitelistItem(ChunkPos3D ck, String itemRef, WhitelistEntry wlItem) {
-		cap.get(ck).whitelist.put(itemRef, wlItem);
+		getCap().get(ck).whitelist.put(itemRef, wlItem);
 		return "WLItem Added";
 	}
 	
 	public default String removeWhitelistItem(ChunkPos3D ck, String item) {
-		WhitelistEntry wle = cap.get(ck).whitelist.remove(item);
+		WhitelistEntry wle = getCap().get(ck).whitelist.remove(item);
 		if (wle == null) return "Item Not Found.";
 		return "Whitelist Item Removed";
 
 	}
 	
-	public default Map<String, WhitelistEntry> getWhitelist(ChunkPos3D ck) {return cap.get(ck).whitelist;}
+	public default Map<String, WhitelistEntry> getWhitelist(ChunkPos3D ck) {return getCap().get(ck).whitelist;}
 	
 	public default String addPlayer(ChunkPos3D ck, UUID player, String playerName) {		
-		cap.get(ck).permittedPlayers.put(player, playerName);
+		getCap().get(ck).permittedPlayers.put(player, playerName);
 		return "Player Added";
 	}
 	
 	public default String removePlayer(ChunkPos3D ck, UUID player) {
-		cap.get(ck).permittedPlayers.remove(player);
+		getCap().get(ck).permittedPlayers.remove(player);
 		return "Player Removed";
 	}
 	
-	public default Map<UUID, String> getPlayers(ChunkPos3D ck) {return cap.get(ck).permittedPlayers;}
+	public default Map<UUID, String> getPlayers(ChunkPos3D ck) {return getCap().get(ck).permittedPlayers;}
 	
 	/*TODO think on these as to how they should would be implemented
 	*this has to do with WSDs and how I want to interface with them.
@@ -90,14 +93,14 @@ public interface LogicRealEstate {
 	public void loadChunkData(ChunkPos3D ck);
 	
 	//BEGIN GAME LOGIC SECTION
-	public static String tempClaim(ChunkPos3D ck, UUID player, String playerName) {
-		if (!cap.get(ck).owner.equals(ComVars.NIL) || !cap.get(ck).renter.equals(ComVars.NIL)) return "Chunk Already Claimed";
-		double balP = LogicMoney.getBalance(player);
-		if (balP >= cap.get(ck).price * ConfigCore.TEMPCLAIM_RATE) {
-			LogicMoney.changeBalance(player, (-1 * (cap.get(ck).price * ConfigCore.TEMPCLAIM_RATE)));
-			cap.get(ck).renter = player;
-			cap.get(ck).permittedPlayers.put(player, playerName);
-			cap.get(ck).rentEnd = System.currentTimeMillis() + ConfigCore.TEMPCLAIM_DURATION;
+	public default String tempClaim(ChunkPos3D ck, UUID player, String playerName) {
+		if (!getCap().get(ck).owner.equals(ComVars.NIL) || !getCap().get(ck).renter.equals(ComVars.NIL)) return "Chunk Already Claimed";
+		double balP = LogicMoney.getBalance(player, AccountType.PLAYER.rl);
+		if (balP >= getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE) {
+			LogicMoney.changeBalance(player, AccountType.PLAYER.rl, (-1 * (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE)));
+			getCap().get(ck).renter = player;
+			getCap().get(ck).permittedPlayers.put(player, playerName);
+			getCap().get(ck).rentEnd = System.currentTimeMillis() + ConfigCore.TEMPCLAIM_DURATION;
 			return "Temp Claim Successful";
 		}
 		else return "Insufficient funds to claim";
@@ -113,27 +116,37 @@ public interface LogicRealEstate {
 	 * @param guild the guild attempting to claim
 	 * @return a textual result statement.
 	 */
-	public static String guildClaim(ChunkPos3D ck, UUID guild) {
-		double outpostFee = (bordersCoreLand(ck, guild) ? 0d : ConfigCore.OUTPOST_CREATE_COST);
-		if (!cap.get(ck).owner.equals(ComVars.NIL)) return "Chunk Already Claimed";
-		double balG = LogicMoney.getBalance(guild);
-		if (balG >= cap.get(ck).price + outpostFee) {
-			LogicMoney.changeBalance(guild, (-1 * (cap.get(ck).price)));
-			if (!cap.get(ck).renter.equals(ComVars.NIL)) {
-				LogicMoney.changeBalance(cap.get(ck).renter, cap.get(ck).price * ConfigCore.TEMPCLAIM_RATE);
-				cap.get(ck).renter = ComVars.NIL;
-				cap.get(ck).permittedPlayers = new HashMap<UUID, String>();
+	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor) {
+		if (!getCap().get(ck).owner.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
+			return "Chunk Already Claimed";
+		boolean bordersCore = bordersCoreLand(ck, guild);
+		Guild gindex = ILogicGuilds.getGuildByID(guild);
+		//Verify actor is permitted to perform action
+		if (!bordersCore && gindex.members.getOrDefault(transactor, -1) < gindex.permissions.get(permKey.OUTPOST_CREATE))
+			return "Rank Permission Inadequate";
+		if (bordersCore && gindex.members.getOrDefault(transactor, -1) < gindex.permissions.get(permKey.CLAIM_LAND))
+			return "Rank Permission Inadequate";
+		//Verify funds available for transaction
+		//TODO was still working through this block.  it looks like it works, but it's garbage.
+		double outpostFee = (bordersCore ? 0d : ConfigCore.OUTPOST_CREATE_COST);
+		double balG = LogicMoney.getBalance(guild, AccountType.GUILD.rl);
+		if (balG >= getCap().get(ck).price + outpostFee) {
+			LogicMoney.changeBalance(guild, AccountType.GUILD.rl, (-1 * (getCap().get(ck).price)));
+			if (!getCap().get(ck).renter.equals(ComVars.NIL)) {
+				LogicMoney.changeBalance(getCap().get(ck).renter, AccountType.PLAYER.rl, getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE);
+				getCap().get(ck).renter = ComVars.NIL;
+				getCap().get(ck).permittedPlayers = new HashMap<UUID, String>();
 			}
-			cap.get(ck).owner = guild;
-			cap.get(ck).leasePrice = -1;
-			cap.get(ck).leaseDuration = 0;
-			cap.get(ck).permMin = (outpostFee > 0 ? LogicGuilds.getGuildByID(guild).permissions.get(permKey.OUTPOST_CREATE) : LogicGuilds.getGuildByID(guild).permissions.get(permKey.CORE_CLAIM));
-			cap.get(ck).rentEnd = System.currentTimeMillis();
-			cap.get(ck).isPublic = false;
-			cap.get(ck).isForSale = false;
-			cap.get(ck).canExplode = false;
-			cap.get(ck).whitelist = new HashMap<String, WhitelistEntry>();
-			cap.get(ck).permittedPlayers = new HashMap<UUID, String>();
+			getCap().get(ck).owner = guild;
+			getCap().get(ck).leasePrice = -1;
+			getCap().get(ck).leaseDuration = 0;
+			getCap().get(ck).permMin = 0;
+			getCap().get(ck).rentEnd = System.currentTimeMillis();
+			getCap().get(ck).isPublic = false;
+			getCap().get(ck).isForSale = false;
+			getCap().get(ck).canExplode = false;
+			getCap().get(ck).whitelist = new HashMap<String, WhitelistEntry>();
+			getCap().get(ck).permittedPlayers = new HashMap<UUID, String>();
 		}
 		else return "Insufficient Guild Funds";
 		return "Claim Successful";
@@ -145,28 +158,28 @@ public interface LogicRealEstate {
 	 * @param guild the guild whose ownership is being evaluated
 	 * @return 0=normal claim, 1=new outpost, 2=outpostclaim
 	 */
-	static boolean bordersCoreLand(ChunkPos3D ck, UUID guild) {
-		return cap.get(new ChunkPos3D(ck.x-1, ck.y, ck.z)).owner.equals(guild) ||
-			cap.get(new ChunkPos3D(ck.x+1, ck.y, ck.z)).owner.equals(guild) ||
-			cap.get(new ChunkPos3D(ck.x, ck.y, ck.z-1)).owner.equals(guild) ||
-			cap.get(new ChunkPos3D(ck.x, ck.y, ck.z+1)).owner.equals(guild) ||
-			cap.get(new ChunkPos3D(ck.x, ck.y-1, ck.z)).owner.equals(guild) ||
-			cap.get(new ChunkPos3D(ck.x, ck.y+1, ck.z)).owner.equals(guild); 
+	default boolean bordersCoreLand(ChunkPos3D ck, UUID guild) {
+		return getCap().get(new ChunkPos3D(ck.x-1, ck.y, ck.z)).owner.equals(guild) ||
+			getCap().get(new ChunkPos3D(ck.x+1, ck.y, ck.z)).owner.equals(guild) ||
+			getCap().get(new ChunkPos3D(ck.x, ck.y, ck.z-1)).owner.equals(guild) ||
+			getCap().get(new ChunkPos3D(ck.x, ck.y, ck.z+1)).owner.equals(guild) ||
+			getCap().get(new ChunkPos3D(ck.x, ck.y-1, ck.z)).owner.equals(guild) ||
+			getCap().get(new ChunkPos3D(ck.x, ck.y+1, ck.z)).owner.equals(guild); 
 	}
 	
 	public default String extendClaim(ChunkPos3D ck, UUID player) {
-		double balP = LogicMoney.getBalance(player);
-		double cost = (cap.get(ck).price * ConfigCore.TEMPCLAIM_RATE * cap.get(ck).permittedPlayers.size());
+		double balP = LogicMoney.getBalance(player, AccountType.PLAYER.rl);
+		double cost = (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE * getCap().get(ck).permittedPlayers.size());
 		if (balP >= cost) {
-			LogicMoney.changeBalance(player, (-1 * cost));
-			cap.get(ck).rentEnd += ConfigCore.TEMPCLAIM_DURATION;
+			LogicMoney.changeBalance(player, AccountType.PLAYER.rl, (-1 * cost));
+			getCap().get(ck).rentEnd += ConfigCore.TEMPCLAIM_DURATION;
 			return "Claim Extended";
 		}
 		return "Insufficient Funds";
 	}
 	
 	public default String publicToggle(ChunkPos3D ck, boolean value) {
-		cap.get(ck).isPublic = value;
+		getCap().get(ck).isPublic = value;
 		return "Access Updated";
 	}
 }
