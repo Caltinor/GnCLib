@@ -1,7 +1,7 @@
 package dicemc.testapp.impl;
 
-import dicemc.gnclib.groups.LogicGroups;
+import dicemc.gnclib.guilds.LogicGuilds;
 
-public class GroupsImpl implements LogicGroups{
+public class GroupsImpl implements LogicGuilds{
 
 }
