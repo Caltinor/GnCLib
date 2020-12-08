@@ -2,5 +2,9 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="C:/MinecraftModding/1-16-2/h2-1.4.200.jar"/>
+	<classpathentry kind="lib" path="C:/MinecraftModding/GuildAndCommerce/GnCLib/gson-2.8.6-javadoc.jar"/>
+	<classpathentry kind="lib" path="C:/MinecraftModding/GuildAndCommerce/GnCLib/gson-2.8.6-sources.jar"/>
+	<classpathentry kind="lib" path="C:/MinecraftModding/GuildAndCommerce/GnCLib/gson-2.8.6.jar" sourcepath="C:/MinecraftModding/GuildAndCommerce/GnCLib/gson-2.8.6-sources.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
