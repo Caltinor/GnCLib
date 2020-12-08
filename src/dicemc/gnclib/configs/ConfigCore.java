@@ -1,5 +1,7 @@
 package dicemc.gnclib.configs;
 
+import dicemc.gnclib.money.LogicMoney;
+
 public class ConfigCore {
 	/* Declarations constitute library defaults for config values
 	 * Implementations must use the static methods to redefine them
@@ -38,6 +40,20 @@ public class ConfigCore {
 	public static Double MARKET_AUCTION_TAX_SELL = 0.3;
 	public static Long AUCTION_OPEN_DURATION = 259200000L;
 	
+	public enum DBService {
+		H2("h2"),
+		MY_SQL("mysql");
+		public final String serviceString;
+		DBService(String serviceString) {this.serviceString = serviceString;}
+		
+		public static DBService getFromString() {
+			for (int i = 0; i < DBService.values().length; i++) {
+				if (DBService.values()[i].equals(DB_SERVICE)) return DBService.values()[i];
+			}
+			return H2;
+		}
+	}
+	
 	/**Sets the library DB variables.  If useExternalStorage is set to false,
 	 * all other parameters are ignored.  
 	 * 
@@ -66,6 +82,7 @@ public class ConfigCore {
 	public static String defineMoneyConfigValues(double startingFunds, double guildStartingFunds) {
 		STARTING_FUNDS = startingFunds;
 		GUILD_STARTING_FUNDS = guildStartingFunds;
+		LogicMoney.setService();
 		return "Money Values uploaded to Lib Variables";
 	}
 	
