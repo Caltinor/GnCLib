@@ -6,7 +6,9 @@ This library creates a version agnostic codebase for all GnC versions.
 The goal of this library is to unify features across versions such that 
 the only changes needed are UI elements or those which change with MC 
 version.  By keeping the core logic of the mod, as agnostic as possible,
-changes to MC's code minimally impacts version updates.
+changes to MC's code minimally impacts version updates.  This is not a
+dependency mod to be used with the version mod, this is an embedded 
+library to be added to the build path.
 
 My current goals for this library are to:
 - implement planned features
