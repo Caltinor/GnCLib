@@ -15,8 +15,7 @@ public class Guild {
 	public Map<UUID, Integer> members = new HashMap<UUID, Integer>();
 	
 	public static enum permKey {
-    	CORE_CLAIM,			//can claim land connected to the core
-    	OUTPOST_CLAIM,		//can claim land connected to an outpost (increases taxation) 
+    	CLAIM_LAND,			//can claim land connected to the core
     	OUTPOST_CREATE,		//can create new outposts
     	CLAIM_ABANDON,		//can abandon claims
     	CLAIM_SELL,			//can sell claims
