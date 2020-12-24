@@ -20,6 +20,7 @@ public class ChunkData {
 	public boolean isPublic = false;
 	public boolean isForSale = false;
 	public boolean canExplode = true;
+	//String should be an MC ResourceLocation unless Impl dictates otherwise
 	public Map<String, WhitelistEntry> whitelist = new HashMap<String, WhitelistEntry>();
 	public Map<UUID, String> permittedPlayers = new HashMap<UUID, String>();
 	
