@@ -39,7 +39,7 @@ public interface ILogicRealEstate {
 				try {
 				JsonObject j = JsonParser.parseString(vals.getValue()).getAsJsonObject();
 				String wlItem = j.get("item").getAsString();
-				WhitelistEntry wlEntry = new WhitelistEntry(j.get("isentity").getAsBoolean(), j.get("canbreak").getAsBoolean(), j.get("caninteract").getAsBoolean());
+				WhitelistEntry wlEntry = new WhitelistEntry(j.get("canbreak").getAsBoolean(), j.get("caninteract").getAsBoolean());
 				updateWhitelistItem(ck, wlItem, wlEntry);
 				} catch (JsonSyntaxException e) {e.printStackTrace();}
 				break;
@@ -116,11 +116,11 @@ public interface ILogicRealEstate {
 	 * @param guild the guild attempting to claim
 	 * @return a textual result statement.
 	 */
-	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor) {
+	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor, ILogicGuilds guildImpl) {
 		if (!getCap().get(ck).owner.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
 			return "Chunk Already Claimed";
 		boolean bordersCore = bordersCoreLand(ck, guild);
-		Guild gindex = ILogicGuilds.getGuildByID(guild);
+		Guild gindex = guildImpl.getGuildByID(guild);
 		//Verify actor is permitted to perform action
 		if (!bordersCore && gindex.members.getOrDefault(transactor, -1) < gindex.permissions.get(permKey.OUTPOST_CREATE))
 			return "Rank Permission Inadequate";
