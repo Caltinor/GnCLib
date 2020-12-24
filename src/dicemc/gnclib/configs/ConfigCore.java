@@ -1,5 +1,8 @@
 package dicemc.gnclib.configs;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import dicemc.gnclib.money.LogicMoney;
 
 public class ConfigCore {
@@ -9,7 +12,7 @@ public class ConfigCore {
 	 * overwriting values.
 	 */
 	//Data Storage config values
-	public static Boolean MARKET_USE_EXTERNAL_DB = false;
+	public static boolean MARKET_USE_EXTERNAL_DB = false;
 	public static String DB_PORT = "";
 	public static String DB_NAME = "GNC";
 	public static String DB_SERVICE = "h2";
@@ -17,28 +20,31 @@ public class ConfigCore {
 	public static String DB_USER = "sa";
 	public static String DB_PASS = "";
 	//Money Related Variables
-	public static Double STARTING_FUNDS = 1000d;
-	public static Double GUILD_STARTING_FUNDS = 0d;
+	public static double STARTING_FUNDS = 1000d;
+	public static double GUILD_STARTING_FUNDS = 0d;
 	//Guild Related Variables
-	public static Double GLOBAL_TAX_RATE = 0.1;
-	public static Long GLOBAL_TAX_INTERVAL = 864000L;
-	public static Double GUILD_CREATE_COST = 2500d;
-	public static Double GUILD_NAME_CHANGE_COST = 1500d;
-	public static Double GUILD_RANK_ADD_COST = 1000d;
+	public static double GLOBAL_TAX_RATE = 0.1;
+	public static long GLOBAL_TAX_INTERVAL = 864000L;
+	public static double GUILD_CREATE_COST = 2500d;
+	public static double GUILD_NAME_CHANGE_COST = 1500d;
+	public static double GUILD_RANK_ADD_COST = 1000d;
 	//Real Estate Related Variables
-	public static Double DEFAULT_LAND_PRICE = 10d;
-	public static Long TEMPCLAIM_DURATION = 43200000L;
-	public static Integer CHUNKS_PER_MEMBER = 9;
-	public static Double TEMPCLAIM_RATE = 0.1;
-	public static Double LAND_ABANDON_REFUND_RATE = 0.75;
-	public static Double OUTPOST_CREATE_COST = 2000d;
+	public static double DEFAULT_LAND_PRICE = 10d;
+	public static long TEMPCLAIM_DURATION = 43200000L;
+	public static int CHUNKS_PER_MEMBER = 9;
+	public static double TEMPCLAIM_RATE = 0.1;
+	public static double LAND_ABANDON_REFUND_RATE = 0.75;
+	public static double OUTPOST_CREATE_COST = 2000d;
+	public static boolean AUTO_TEMPCLAIM = true;
 	//Protection Related Variables
-	public static Boolean UNOWNED_PROTECTED = true;
+	public static boolean UNOWNED_PROTECTED = true;
+	public static List<String> PROTECTED_DIMENSION_BLACKLIST = new ArrayList<String>();
+	public static List<String> UNOWNED_WHITELIST = new ArrayList<String>();
 	//Trade Related Variables
-	public static Double MARKET_GLOBAL_TAX_BUY = 0.1;
-	public static Double MARKET_GLOBAL_TAX_SELL = 0.1;
-	public static Double MARKET_AUCTION_TAX_SELL = 0.3;
-	public static Long AUCTION_OPEN_DURATION = 259200000L;
+	public static double MARKET_GLOBAL_TAX_BUY = 0.1;
+	public static double MARKET_GLOBAL_TAX_SELL = 0.1;
+	public static double MARKET_AUCTION_TAX_SELL = 0.3;
+	public static long AUCTION_OPEN_DURATION = 259200000L;
 	
 	public enum DBService {
 		H2("h2"),
@@ -48,7 +54,7 @@ public class ConfigCore {
 		
 		public static DBService getFromString() {
 			for (int i = 0; i < DBService.values().length; i++) {
-				if (DBService.values()[i].equals(DB_SERVICE)) return DBService.values()[i];
+				if (DBService.values()[i].serviceString.equals(DB_SERVICE)) return DBService.values()[i];
 			}
 			return H2;
 		}
@@ -95,18 +101,22 @@ public class ConfigCore {
 		return "Guild Values uploaded to Lib Variables";
 	}
 	
-	public static String defineRealEstateConfigValues(double defaultLandPrice, long tempclaimDuration, int chunksPerMember, double tempclaimRate, double landAbandonRefundRate, double outpostCreateCost) {
+	public static String defineRealEstateConfigValues(double defaultLandPrice, long tempclaimDuration, int chunksPerMember, double tempclaimRate,
+			double landAbandonRefundRate, double outpostCreateCost, boolean autoTempclaim) {
 		DEFAULT_LAND_PRICE = defaultLandPrice;
 		TEMPCLAIM_DURATION = tempclaimDuration;
 		CHUNKS_PER_MEMBER = chunksPerMember;
 		TEMPCLAIM_RATE = tempclaimRate;
 		LAND_ABANDON_REFUND_RATE = landAbandonRefundRate;
 		OUTPOST_CREATE_COST = outpostCreateCost;
+		AUTO_TEMPCLAIM = autoTempclaim;
 		return "Real Estate Values uploaded to Lib Variables";
 	}
 	
-	public static String defineProtectionConfigValues(boolean unownedProtected) {
+	public static String defineProtectionConfigValues(boolean unownedProtected, List<String> unownedWhitelist, List<String> protectionBlacklist) {
 		UNOWNED_PROTECTED = unownedProtected;
+		UNOWNED_WHITELIST = unownedWhitelist;
+		PROTECTED_DIMENSION_BLACKLIST = protectionBlacklist;
 		return "Protection Values uploaded to Lib Variables";
 	}
 	
