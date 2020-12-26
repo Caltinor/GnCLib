@@ -173,7 +173,7 @@ public interface LogicProtection {
 	 * @param data  the data for the chunk being checked
 	 * @param player the player being checked for
 	 * @param exemptPlayer pass the results of any check that would renderthis player exempt such as creative mode or opped
-	 * @return
+	 * @return true if the player is sublet permitted by their guild.
 	 */
 	default boolean isSubletPermitted(ChunkData data, UUID player, ILogicGuilds guildImpl) {
 		Guild guild = guildImpl.getGuildByID(data.owner);
@@ -236,7 +236,7 @@ public interface LogicProtection {
 	 * @param isLeftClick
 	 * @param isSneaking
 	 * @param guildImpl
-	 * @return
+	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
 	public default TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
 		//Whitelister interact toggle
@@ -257,17 +257,112 @@ public interface LogicProtection {
 		}
 	}
 	
-	//TODO Block Place
+	/**CHECK IF ENTITY IS PLAYER BEFORE CALLING
+	 * 
+	 * @param data
+	 * @param player
+	 * @param item
+	 * @param guildImpl
+	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
+	 */
+	public default TranslatableResult<ResultType> onBlockPlaceLogic(ChunkData data, UUID player, String item, ILogicGuilds guildImpl) {
+		if (!ConfigCore.UNOWNED_PROTECTED && data.owner.equals(ComVars.NIL)) return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM)
+			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
+		switch (ownerMatch(player, data, guildImpl)) {
+		case DENY: {
+			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.placedeny");
+		}
+		case WHITELIST: {
+			if (!whitelistCheck(item, data, ActionType.PLACE))
+				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.placedeny");
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		}
+		default:}
+		return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+	}
 	
-	//TODO Entity Interact
+	//Check if player is exempt before calling this method
+	public default TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
+		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking, guildImpl);
+		if (result.result.equals(ResultType.TRUE)) return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+		switch (ownerMatch(player, data, guildImpl)) {
+		case DENY: {
+			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.interactdeny");
+		}
+		case WHITELIST: {
+			if (!whitelistCheck(item, data, ActionType.INTERACT)) {
+				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.interactdeny");
+			}
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		}
+		default: }
+		return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+	}
 	
-	//TODO Entity Attack
+	/** this method checks the logic of LivingDamageEvent and AttackEntityEvents
+	 * 
+	 * - Do not call if player is exempt, such as creative or operator.
+	 * - Do not call if target entity is exempt from protections, such as mobs.
+	 * - Call {@link isWhitelisterAction} on the logical server before calling this method on both sides
+	 * 
+	 * @param data the chunk data for the target's location
+	 * @param player the player our damage source player causing the harm
+	 * @param guildImpl the guild logic implementation
+	 * @param target the entity receiving the harm.
+	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
+	 */
+	public default TranslatableResult<ResultType> onEntityHarmLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String target) {
+		switch (ownerMatch(player, data, guildImpl)) {
+		case DENY :{ return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.breakdeny");}
+		case WHITELIST: {
+			if (!whitelistCheck(target, data, ActionType.BREAK)) { return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.breakdeny");} 
+		}
+		default: return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+	}
 	
-	//TODO Entity Damage
-	
-	//TODO Explosion
-	
-	//TODO Trample
-	
-	//TODO Bucket Use
+	//Explosion cannot reasonably be default.  this needs to be done on the implementation
+	//public default TranslatableResult<ResultType> onExplosionLogic(ILogicRealEstate realEstateImpl) {}
+
+	public default TranslatableResult<ResultType> onTrampleLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
+		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
+		switch (ownerMatch(player, data, guildImpl)) {
+		case DENY: {
+			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.trampledeny");
+		}
+		case WHITELIST: {
+			if (!whitelistCheck(item, data, ActionType.BREAK)) {
+				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.trampledeny");
+			}
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		}
+		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		}
+	}
+
+	public default TranslatableResult<ResultType> onBucketUseLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
+		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
+		switch (ownerMatch(player, data, guildImpl)) {
+		case DENY: {
+			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.bucketdeny");
+		}
+		case WHITELIST: {
+			if (!whitelistCheck(item, data, ActionType.BREAK)) {
+				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.bucketdeny");
+			}
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		}
+		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		}
+	}
 }
