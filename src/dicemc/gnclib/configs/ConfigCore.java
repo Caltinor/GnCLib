@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dicemc.gnclib.money.LogicMoney;
+import dicemc.gnclib.trade.LogicTrade;
 
 public class ConfigCore {
 	/* Declarations constitute library defaults for config values
@@ -88,7 +89,7 @@ public class ConfigCore {
 	public static String defineMoneyConfigValues(double startingFunds, double guildStartingFunds) {
 		STARTING_FUNDS = startingFunds;
 		GUILD_STARTING_FUNDS = guildStartingFunds;
-		LogicMoney.setService();
+		LogicMoney.init();
 		return "Money Values uploaded to Lib Variables";
 	}
 	
@@ -125,6 +126,7 @@ public class ConfigCore {
 		MARKET_GLOBAL_TAX_SELL = globalTaxSell;
 		MARKET_AUCTION_TAX_SELL = auctionTaxSell;
 		AUCTION_OPEN_DURATION = auctionOpenDuration;
+		LogicTrade.init();
 		return "Trade Values uploaded to Lib Variables";
 	}
 }
