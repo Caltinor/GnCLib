@@ -30,4 +30,10 @@ public class H2Impl implements IDBImplMoney{
 		return false;
 	}
 
+	@Override
+	public double addAccount(UUID owner, String ownerType) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

@@ -122,9 +122,9 @@ public interface ILogicRealEstate {
 		boolean bordersCore = bordersCoreLand(ck, guild);
 		Guild gindex = guildImpl.getGuildByID(guild);
 		//Verify actor is permitted to perform action
-		if (!bordersCore && gindex.members.getOrDefault(transactor, -1) < gindex.permissions.get(permKey.OUTPOST_CREATE))
+		if (!bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(permKey.OUTPOST_CREATE))
 			return "Rank Permission Inadequate";
-		if (bordersCore && gindex.members.getOrDefault(transactor, -1) < gindex.permissions.get(permKey.CLAIM_LAND))
+		if (bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(permKey.CLAIM_LAND))
 			return "Rank Permission Inadequate";
 		//Verify funds available for transaction
 		//TODO was still working through this block.  it looks like it works, but it's garbage.

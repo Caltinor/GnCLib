@@ -10,4 +10,6 @@ public interface IDBImplMoney {
 	boolean changeBalance(UUID owner, String ownerType, double value);
 	
 	boolean transferFunds(UUID ownerFrom, String ownerFromType, UUID ownerTo, String owernToType, double value);
+	
+	double addAccount(UUID owner, String ownerType);
 }

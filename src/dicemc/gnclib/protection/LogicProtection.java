@@ -12,14 +12,14 @@ import dicemc.gnclib.realestate.items.IWhitelister;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.TranslatableResult;
 
-public interface LogicProtection {
+public class LogicProtection {
 	public static enum ActionType {BREAK, PLACE, INTERACT}
 	public static enum MatchType {FULL, DENY, WHITELIST}
 	enum PlayerType {UNSET, ULNM, LNM, LM, HRM, LRM}
 	//elongated: UnListed Non-Member, Listed Non-Member, Listed Member, High Rank Member, Low Rank Member
 	public static enum ResultType {TRUE, FALSE, PACKET}
 	
-	public default MatchType ownerMatch(UUID player, ChunkData data, ILogicGuilds guildImpl) {
+	public static MatchType ownerMatch(UUID player, ChunkData data, ILogicGuilds guildImpl) {
 		//return full perms if the claim is public
 		if (data.isPublic) return MatchType.FULL;
 		//return full perms if the player is the tempclaim owner
@@ -33,13 +33,13 @@ public interface LogicProtection {
 			PlayerType pt = PlayerType.UNSET;
 			Guild guild = guildImpl.getGuilds().get(data.owner);
 			//check if player is non-member by checking for invited members and defaulting to the same code if not present
-			if (guild.members.getOrDefault(player, -1) == -1) {
+			if (guild.members.getOrDefault(player, ComVars.INV).equals(ComVars.INV)) {
 				if (data.renter.equals(player) || data.permittedPlayers.containsKey(player)) pt = PlayerType.LNM;
 				if (pt == PlayerType.UNSET) pt = PlayerType.ULNM;
 			}
 			else {
 				if (data.renter.equals(player) || data.permittedPlayers.containsKey(player)) pt = PlayerType.LM;
-				if (pt == PlayerType.UNSET && guild.members.getOrDefault(player, Integer.MAX_VALUE) <= data.permMin) pt = PlayerType.HRM;
+				if (pt == PlayerType.UNSET && guild.ranks.get(guild.members.getOrDefault(player, ComVars.INV)).sequence <= data.permMin) pt = PlayerType.HRM;
 				else pt = PlayerType.LRM;
 			}
 			//Use playerType to identify which whitelist setup results in which result matchType
@@ -99,7 +99,7 @@ public interface LogicProtection {
 		return MatchType.DENY;
 	}
 
-	public default boolean whitelistCheck(String item, ChunkData data, ActionType type) {
+	public static boolean whitelistCheck(String item, ChunkData data, ActionType type) {
 		if (data.whitelist.size() == 0) return true;
 		if (data.whitelist.containsKey(item)) {
 			switch (type) {
@@ -111,7 +111,7 @@ public interface LogicProtection {
 	}
 	
 	public static enum WhitelisterType {NOT_WHITELISTER, DEFAULT, GREEN_STICK, RED_STICK}	
-	public default TranslatableResult<ResultType> isWhitelisterAction(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> isWhitelisterAction(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
 		switch (type) {
 		case NOT_WHITELISTER: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");} 
 		case DEFAULT: {
@@ -175,13 +175,12 @@ public interface LogicProtection {
 	 * @param exemptPlayer pass the results of any check that would renderthis player exempt such as creative mode or opped
 	 * @return true if the player is sublet permitted by their guild.
 	 */
-	default boolean isSubletPermitted(ChunkData data, UUID player, ILogicGuilds guildImpl) {
+	private static boolean isSubletPermitted(ChunkData data, UUID player, ILogicGuilds guildImpl) {
 		Guild guild = guildImpl.getGuildByID(data.owner);
-		return (guild.members.getOrDefault(player, Integer.MAX_VALUE) <= guild.permissions.get(Guild.permKey.SUBLET_MANAGE)
-				&& guild.members.getOrDefault(player, 4) != -1);
+		return (guild.ranks.get(guild.members.getOrDefault(player, ComVars.INV)).sequence <= guild.permissions.get(Guild.permKey.SUBLET_MANAGE));
 	}
 	
-	public default boolean unownedWLBreakCheck(String block) {
+	public static boolean unownedWLBreakCheck(String block) {
 		if (ConfigCore.UNOWNED_WHITELIST.size() == 0) return false;
 		for (int i = 0; i < ConfigCore.UNOWNED_WHITELIST.size(); i++) {
 			if (block.equalsIgnoreCase(ConfigCore.UNOWNED_WHITELIST.get(i))) return true;
@@ -199,7 +198,7 @@ public interface LogicProtection {
 	 * @param guildImpl the guild logic implementation which stores the guild data
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
-	public default TranslatableResult<ResultType> onBlockBreakLogic(ChunkData data, String item, UUID player, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> onBlockBreakLogic(ChunkData data, String item, UUID player, ILogicGuilds guildImpl) {
 		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
 		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
@@ -220,7 +219,7 @@ public interface LogicProtection {
 		}
 	}
 	
-	public default TranslatableResult<ResultType> onBlockLeftClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> onBlockLeftClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
 		return isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking, guildImpl);
 	}
 	
@@ -238,7 +237,7 @@ public interface LogicProtection {
 	 * @param guildImpl
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
-	public default TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
 		//Whitelister interact toggle
 		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking, guildImpl);
 		if (result.result.equals(ResultType.TRUE)) {return result;}
@@ -265,7 +264,7 @@ public interface LogicProtection {
 	 * @param guildImpl
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
-	public default TranslatableResult<ResultType> onBlockPlaceLogic(ChunkData data, UUID player, String item, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> onBlockPlaceLogic(ChunkData data, UUID player, String item, ILogicGuilds guildImpl) {
 		if (!ConfigCore.UNOWNED_PROTECTED && data.owner.equals(ComVars.NIL)) return new TranslatableResult<ResultType>(ResultType.FALSE, "");
 		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM)
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
@@ -283,7 +282,7 @@ public interface LogicProtection {
 	}
 	
 	//Check if player is exempt before calling this method
-	public default TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
+	public static TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking, ILogicGuilds guildImpl) {
 		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking, guildImpl);
 		if (result.result.equals(ResultType.TRUE)) return new TranslatableResult<ResultType>(ResultType.TRUE, "");
 		switch (ownerMatch(player, data, guildImpl)) {
@@ -312,7 +311,7 @@ public interface LogicProtection {
 	 * @param target the entity receiving the harm.
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
-	public default TranslatableResult<ResultType> onEntityHarmLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String target) {
+	public static TranslatableResult<ResultType> onEntityHarmLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String target) {
 		switch (ownerMatch(player, data, guildImpl)) {
 		case DENY :{ return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.breakdeny");}
 		case WHITELIST: {
@@ -322,9 +321,9 @@ public interface LogicProtection {
 	}
 	
 	//Explosion cannot reasonably be default.  this needs to be done on the implementation
-	//public default TranslatableResult<ResultType> onExplosionLogic(ILogicRealEstate realEstateImpl) {}
+	//public static TranslatableResult<ResultType> onExplosionLogic(ILogicRealEstate realEstateImpl) {}
 
-	public default TranslatableResult<ResultType> onTrampleLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
+	public static TranslatableResult<ResultType> onTrampleLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
 		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
 		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
@@ -345,7 +344,7 @@ public interface LogicProtection {
 		}
 	}
 
-	public default TranslatableResult<ResultType> onBucketUseLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
+	public static TranslatableResult<ResultType> onBucketUseLogic(ChunkData data, UUID player, ILogicGuilds guildImpl, String item) {
 		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
 		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
