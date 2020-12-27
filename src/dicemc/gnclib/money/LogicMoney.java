@@ -8,7 +8,7 @@ import dicemc.gnclib.money.dbref.H2Impl;
 import dicemc.gnclib.money.dbref.IDBImplMoney;
 
 public class LogicMoney {
-	static IDBImplMoney service;
+	private static IDBImplMoney service;
 	
 	public enum AccountType{
 		PLAYER(ComVars.MOD_ID+":player"),
@@ -18,7 +18,11 @@ public class LogicMoney {
 		AccountType(String resourceLocation) {rl = resourceLocation;}
 	}
 	
-	public static IDBImplMoney setService() {
+	public static void init() {
+		service = setService();
+	}
+	
+	private static IDBImplMoney setService() {
 		switch (ConfigCore.DBService.getFromString()) {
 		case H2: {
 			return new H2Impl();
@@ -47,7 +51,7 @@ public class LogicMoney {
 		service.changeBalance(owner, resourceLocation, d);
 	}
 
-	public boolean transferFunds(UUID ownerFrom, String ownerFromType, UUID ownerTo, String ownerToType, double value) {
+	public static boolean transferFunds(UUID ownerFrom, String ownerFromType, UUID ownerTo, String ownerToType, double value) {
 		return service.transferFunds(ownerFrom, ownerFromType, ownerTo, ownerToType, value);
 	}
 }
