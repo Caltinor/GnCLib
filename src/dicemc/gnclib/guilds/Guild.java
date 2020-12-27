@@ -10,9 +10,9 @@ public class Guild {
 	public boolean open;
 	public boolean isAdmin;
 	public double tax;
-	public Map<Integer, String> permLevels = new HashMap<Integer, String>();
+	public Map<UUID, Rank> ranks = new HashMap<UUID, Rank>();
 	public Map<permKey, Integer> permissions = new HashMap<permKey, Integer>();
-	public Map<UUID, Integer> members = new HashMap<UUID, Integer>();
+	public Map<UUID, UUID> members = new HashMap<UUID, UUID>();
 	
 	public static enum permKey {
     	CLAIM_LAND,			//can claim land connected to the core
@@ -38,6 +38,7 @@ public class Guild {
 		this.name = name;
 		open = true;
 		tax = 0.0;
-		permLevels.put(0, "Member");
+		Rank rank = new Rank("Members");
+		ranks.put(rank.id, rank);
 	}
 }
