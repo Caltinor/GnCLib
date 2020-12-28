@@ -18,21 +18,21 @@ public class LogicMoney {
 		AccountType(String resourceLocation) {rl = resourceLocation;}
 	}
 	
-	public static void init() {
-		service = setService();
+	public static void init(String worldName) {
+		service = setService(worldName);
 	}
 	
-	private static IDBImplMoney setService() {
+	private static IDBImplMoney setService(String worldName) {
 		switch (ConfigCore.DBService.getFromString()) {
 		case H2: {
-			return new H2Impl();
+			return new H2Impl(worldName);
 		}
 		case MY_SQL: {
 			break;
 		}
 		default:
 		}
-		return new H2Impl();
+		return new H2Impl(worldName);
 	}
 
 	/* String type resourceLocations are "MODID:ACCOUNT_TYPE" strings

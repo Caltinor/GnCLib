@@ -86,10 +86,10 @@ public class ConfigCore {
 		return "Data Storage Values uploaded to Lib Variables";
 	}
 	
-	public static String defineMoneyConfigValues(double startingFunds, double guildStartingFunds) {
+	public static String defineMoneyConfigValues(String worldName, double startingFunds, double guildStartingFunds) {
 		STARTING_FUNDS = startingFunds;
 		GUILD_STARTING_FUNDS = guildStartingFunds;
-		LogicMoney.init();
+		LogicMoney.init(worldName);
 		return "Money Values uploaded to Lib Variables";
 	}
 	

@@ -9,9 +9,9 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
 import dicemc.gnclib.configs.ConfigCore;
-import dicemc.gnclib.guilds.Guild;
-import dicemc.gnclib.guilds.Guild.permKey;
-import dicemc.gnclib.guilds.ILogicGuilds;
+import dicemc.gnclib.guilds.LogicGuilds;
+import dicemc.gnclib.guilds.LogicGuilds.PermKey;
+import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ChunkPos3D;
@@ -116,16 +116,17 @@ public interface ILogicRealEstate {
 	 * @param guild the guild attempting to claim
 	 * @return a textual result statement.
 	 */
-	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor, ILogicGuilds guildImpl) {
+	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor, LogicGuilds guildImpl) {
 		if (!getCap().get(ck).owner.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
 			return "Chunk Already Claimed";
 		boolean bordersCore = bordersCoreLand(ck, guild);
 		Guild gindex = guildImpl.getGuildByID(guild);
 		//Verify actor is permitted to perform action
-		if (!bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(permKey.OUTPOST_CREATE))
+		/*TODO this needs a BIG rework
+		if (!bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(PermKey.OUTPOST_CREATE))
 			return "Rank Permission Inadequate";
-		if (bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(permKey.CLAIM_LAND))
-			return "Rank Permission Inadequate";
+		if (bordersCore && gindex.ranks.get(gindex.members.getOrDefault(transactor, ComVars.INV)).sequence < gindex.permissions.get(PermKey.CLAIM_LAND))
+			return "Rank Permission Inadequate";*/
 		//Verify funds available for transaction
 		//TODO was still working through this block.  it looks like it works, but it's garbage.
 		double outpostFee = (bordersCore ? 0d : ConfigCore.OUTPOST_CREATE_COST);
