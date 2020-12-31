@@ -1,14 +1,8 @@
 package dicemc.gnclib.money.dbref;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.UUID;
 
-public interface IDBImplMoney {
-	ResultSet executeSELECT(PreparedStatement sql);
-	
-	int executeUPDATE(PreparedStatement sql);
-	
+public interface IDBImplMoney {	
 	double getBalance(UUID owner, String ownerType);
 	
 	boolean setBalance(UUID owner, String ownerType, double value);

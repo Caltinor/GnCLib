@@ -6,11 +6,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import dicemc.gnclib.configs.ConfigCore;
+import dicemc.gnclib.util.IDatabase;
 
-public class H2Impl implements IDBImplMoney{
+public class H2Impl implements IDBImplMoney, IDatabase{
 	private Connection con;
 	
 	public H2Impl(String saveName) {
@@ -35,16 +38,7 @@ public class H2Impl implements IDBImplMoney{
 	}
 	
 	@Override
-	public ResultSet executeSELECT(PreparedStatement sql) {
-		try {return sql.executeQuery(); } catch (SQLException e) {e.printStackTrace();}
-		return null;
-	}
-
-	@Override
-	public int executeUPDATE(PreparedStatement sql) {
-		try {return sql.executeUpdate(); } catch (SQLException e) {e.printStackTrace();}
-		return 0;
-	}
+	public List<String> defineTables() {return new ArrayList<String>();}
 
 	@Override
 	public double getBalance(UUID owner, String ownerType) {
