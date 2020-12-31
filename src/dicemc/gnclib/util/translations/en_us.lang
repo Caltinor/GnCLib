@@ -4,15 +4,21 @@ lib.protection=
 
 lib.guild.create.success=Guild Created
 lib.guild.create.failure=Guild Name Taken
+lib.guild.delete.success=Guild Removed.
+lib.guild.delete.failure=Guild could not be removed.
 lib.guild.member.update.success=%s guild rank set to %s
 lib.guild.member.update.failure=%s rank update failed
 lib.guild.member.remove.success=%s removed from guild
 lib.guild.member.remove.failure=Player not found in guild
-lib.guild.update=Guild Data Updated.
+lib.guild.update.success=Guild Data Updated.
+lib.guild.update.name.falure=Insufficient Funds for Name Change
 lib.guild.rank.add.success=Rank Added
 lib.guild.rank.set.success=Rank Title Updated.
 lib.guild.rank.set.failure=Rank Not Unlocked.
 lib.guild.permission.set.success=Permission Set
+lib.guild.permission.set.failure=Permission Already Defined
+lib.guild.permission.remove.success=Permission Removed
+lib.guild.permission.remove.failure=Permission Did Not Previously Exist
 
 #Old values below this line
 item.moneybag.name=Moneybag
