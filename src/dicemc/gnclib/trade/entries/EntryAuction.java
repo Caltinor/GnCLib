@@ -75,5 +75,13 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 	
 	@Override
 	public int getID() {return id;}
+	@Override
+	public UUID getVendorID() {return vendor;}
+	@Override
+	public double getPrice() {return price;}
+	@Override
+	public int getStock() {return 1;}
+	@Override
+	public boolean getGiveItem() {return true;}
 
 }
