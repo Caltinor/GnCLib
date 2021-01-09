@@ -11,6 +11,8 @@ public class Guild {
 	public boolean open;
 	public boolean isAdmin;
 	public double tax;
+	private int tpX, tpY, tpZ, marketSize;
+
 
 	public Guild(int id, String name, UUID guildID, boolean isOpen, double tax, boolean isAdmin) {
 		this.id = id;
@@ -26,5 +28,21 @@ public class Guild {
 	
 	public static Guild getDefault() {
 		return new Guild(-1, "No Guild", ComVars.NIL, false, 0.0, true);
+	}
+	
+	public void setTPLocation(int x, int y, int z) {
+		tpX = x;
+		tpY = y;
+		tpZ = z;
+	}
+	public int getTPX() {return tpX;}
+	public int getTPY() {return tpY;}
+	public int getTPZ() {return tpZ;}
+	
+	public void setMarketSize(int size) {
+		marketSize = size;
+	}
+	public void changeMarketSize(int change) {
+		setMarketSize((marketSize + change) >= 0 ? marketSize + change : 0);
 	}
 }
