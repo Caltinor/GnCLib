@@ -7,8 +7,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 
-import dicemc.testapp.GnCLibConsole;
-
 public class ScreenRoot implements IScreen{
 	private JFrame frame;
 	private JButton printButton;

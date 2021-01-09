@@ -9,6 +9,8 @@ import dicemc.gnclib.util.ChunkPos3D;
 
 public class RealEstateImpl implements ILogicRealEstate{
 	Map<ChunkPos3D, ChunkData> cap = new HashMap<ChunkPos3D, ChunkData>();
+	
+	public RealEstateImpl() {}
 
 	@Override
 	public Map<ChunkPos3D, ChunkData> getCap() {return cap;}
