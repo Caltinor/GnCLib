@@ -10,7 +10,6 @@ import com.google.gson.JsonSyntaxException;
 
 import dicemc.gnclib.configs.ConfigCore;
 import dicemc.gnclib.guilds.LogicGuilds;
-import dicemc.gnclib.guilds.LogicGuilds.PermKey;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.money.LogicMoney.AccountType;
