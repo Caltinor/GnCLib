@@ -1,8 +1,10 @@
 package dicemc.gnclib.trade.dbref;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import dicemc.gnclib.trade.entries.EntryAuction;
 import dicemc.gnclib.trade.entries.EntryBid;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
@@ -11,6 +13,12 @@ import dicemc.gnclib.util.TranslatableResult;
 
 public class H2Impl implements IDBImplTrade{
 
+	public H2Impl() {
+		/*TODO setup connection variables 
+		 *  - establish connection in constructor
+		 */
+	}
+	
 	@Override
 	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
 		// TODO Auto-generated method stub
@@ -18,20 +26,32 @@ public class H2Impl implements IDBImplTrade{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> closeTransaction(int id) {
+	public TranslatableResult<TradeResult> closeTransaction(int id, MarketType type) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, UUID vendor,
-			String vendorName) {
+	public TranslatableResult<TradeResult> acceptOffer(IMarketEntry entry, MarketType type, EntryOffer offer) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> submitOffer(int id, EntryOffer offer) {
+	public TranslatableResult<TradeResult> expireBid(EntryAuction entry) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, UUID buyer,
+			String buyerName, int count) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public TranslatableResult<TradeResult> submitOffer(IMarketEntry entry, EntryOffer offer) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -49,25 +69,26 @@ public class H2Impl implements IDBImplTrade{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> pullFromStorage(int id) {
+	public TranslatableResult<TradeResult> pullFromStorage(EntryStorage entry, int count) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> changeTransactionSupply(int id, int newSupply) {
+	public TranslatableResult<TradeResult> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int indexEnd) {
+	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int indexEnd,
+			Map<FilterType, String> filters) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public List<EntryStorage> getStorageList(int indexStart, int indexEnd) {
+	public List<EntryStorage> getStorageList(int indexStart, int indexEnd, Map<FilterType, String> filters) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -85,7 +106,8 @@ public class H2Impl implements IDBImplTrade{
 	}
 
 	@Override
-	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int indexEnd) {
+	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int indexEnd,
+			Map<FilterType, String> filters) {
 		// TODO Auto-generated method stub
 		return null;
 	}
