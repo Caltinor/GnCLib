@@ -123,8 +123,6 @@ public class LogicTrade implements IDBImplTrade{
 		LogicMoney.changeBalance(entry.vendor, LogicMoney.AccountType.PLAYER.rl, highestBid.value);
 		return service.expireBid(entry);
 	}
-
-	//TODO implement method for executing a request supply transaction.
 	
 	@Override
 	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, UUID buyer, String buyerName, int count) {
