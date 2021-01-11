@@ -5,15 +5,15 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import dicemc.gnclib.configs.ConfigCore;
 import dicemc.gnclib.util.IDatabase;
 
 public class H2Impl implements IDBImplMoney, IDatabase{
+	private final Map<tblMoney, String> map_Money = define_Money();
 	private Connection con;
 	
 	public H2Impl(String saveName) {
@@ -27,18 +27,26 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		try {
 			System.out.println("Attempting Account DB Connection");
 			con = DriverManager.getConnection(host, user, pass);
-			Statement stmt = con.createStatement();
 			System.out.println("DB Connection Successful");
-			stmt.execute("CREATE TABLE IF NOT EXISTS tblAccounts (" +
-					"ID INT AUTO_INCREMENT PRIMARY KEY, " +
-					"Owner UUID, " +
-					"type VARCHAR, " +
-					"balance DOUBLE);");
+			for (Map.Entry<String, String> entry : defineTables().entrySet()) {
+				String sql = "CREATE TABLE IF NOT EXISTS "+ entry.getKey() + entry.getValue();
+				PreparedStatement st = con.prepareStatement(sql);
+				executeUPDATE(st);
+			}
 		} catch (SQLException e) {e.printStackTrace();}
 	}
 	
 	@Override
-	public List<String> defineTables() {return new ArrayList<String>();}
+	public Map<String, String> defineTables() {
+		Map<String, String> map = new HashMap<String, String>();
+		String tbl = map_Money.get(tblMoney.TABLE_NAME);
+		String sql = "("+ map_Money.get(tblMoney.ID) +" INT AUTO_INCREMENT PRIMARY KEY, " +
+				map_Money.get(tblMoney.OWNER) +" UUID, " +
+				map_Money.get(tblMoney.TYPE) +" VARCHAR, " +
+				map_Money.get(tblMoney.BALANCE) +" DOUBLE);";
+		map.put(tbl, sql);
+		return map;
+	}
 
 	@Override
 	public double getBalance(UUID owner, String ownerType) {
@@ -123,6 +131,16 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		
 		executeUPDATE(st);
 		return ConfigCore.STARTING_FUNDS;
+	}
+	
+	private Map<tblMoney, String> define_Money() {
+		Map<tblMoney, String> map = new HashMap<tblMoney, String>();
+		map.put(tblMoney.TABLE_NAME, "TBL_MONEY_");
+		map.put(tblMoney.ID, "ID");
+		map.put(tblMoney.OWNER, "OWNER");
+		map.put(tblMoney.TYPE, "TYPE");
+		map.put(tblMoney.BALANCE, "BALANCE");
+		return map;
 	}
 
 }

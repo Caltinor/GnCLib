@@ -3,6 +3,8 @@ package dicemc.gnclib.money.dbref;
 import java.util.UUID;
 
 public interface IDBImplMoney {	
+	public static enum tblMoney {TABLE_NAME, ID, OWNER, TYPE, BALANCE}
+	
 	double getBalance(UUID owner, String ownerType);
 	
 	boolean setBalance(UUID owner, String ownerType, double value);
