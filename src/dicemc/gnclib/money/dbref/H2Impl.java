@@ -19,7 +19,7 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 	public H2Impl(String saveName) {
 		String port = ConfigCore.DB_PORT;
 		String name = saveName + ConfigCore.DB_NAME;
-		String url  = ConfigCore.DB_URL;
+		String url  = ConfigCore.DB_URL + "\\";
 		String host = "jdbc:h2:" + url + port + name;;
 		String user = ConfigCore.DB_USER;
 		String pass = ConfigCore.DB_PASS;
@@ -27,7 +27,7 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		try {
 			System.out.println("Attempting Account DB Connection");
 			con = DriverManager.getConnection(host, user, pass);
-			System.out.println("DB Connection Successful");
+			System.out.println("Account DB Connection Successful");
 			for (Map.Entry<String, String> entry : defineTables().entrySet()) {
 				String sql = "CREATE TABLE IF NOT EXISTS "+ entry.getKey() + entry.getValue();
 				PreparedStatement st = con.prepareStatement(sql);
@@ -50,7 +50,9 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 
 	@Override
 	public double getBalance(UUID owner, String ownerType) {
-		String sql = "SELECT * FROM tblAccounts WHERE Owner=? AND type=?";
+		String sql = "SELECT * FROM "+ map_Money.get(tblMoney.TABLE_NAME) +
+				" WHERE "+ map_Money.get(tblMoney.OWNER) +" =? AND " +
+				map_Money.get(tblMoney.TYPE) +" =?";
 		PreparedStatement st = null;
 		try {
 			st = con.prepareStatement(sql);
@@ -65,27 +67,30 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 			if (rs.next()) {return rs.getDouble("balance");			
 		}
 		} catch (SQLException e) {e.printStackTrace();}
-		return 0;
+		return -1;
 	}
 
 	@Override
 	public boolean setBalance(UUID owner, String ownerType, double value) {
-		String sql = "UPDATE tblAccounts SET balance=? WHERE Owner=? AND type=?";
+		String sql = "UPDATE "+ map_Money.get(tblMoney.TABLE_NAME) + " SET " +
+				map_Money.get(tblMoney.BALANCE) + " =? WHERE "+
+				map_Money.get(tblMoney.OWNER) +" =? AND "+
+				map_Money.get(tblMoney.TYPE) +" =?;";
 		PreparedStatement st = null;
 		try {
 			st = con.prepareStatement(sql);
 			st.setObject(2, owner);
 			st.setString(3, ownerType.toString());
 			st.setDouble(1, value);
-		} catch (SQLException e1) {e1.printStackTrace();}
-		int out = executeUPDATE(st);
-		
-		return out > 0;
+		} catch (SQLException e1) {e1.printStackTrace();}		
+		return executeUPDATE(st) > 0;
 	}
 
 	@Override
 	public boolean changeBalance(UUID owner, String ownerType, double value) {
-		String sql = "SELECT * FROM tblAccounts WHERE Owner=? AND type=?";
+		String sql = "SELECT * FROM "+ map_Money.get(tblMoney.TABLE_NAME) +
+				" WHERE "+ map_Money.get(tblMoney.OWNER) +" =? AND " +
+				map_Money.get(tblMoney.TYPE) +" =?";
 		PreparedStatement st = null;
 		try {
 			st = con.prepareStatement(sql);
@@ -100,9 +105,8 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 				currentBal = rs.getDouble("balance");
 			}
 		} catch (SQLException e) {e.printStackTrace(); return false;}
-		currentBal += value;
-		setBalance(owner, ownerType, currentBal);
-		return true;
+		currentBal += value;		
+		return setBalance(owner, ownerType, currentBal);
 	}
 
 	@Override
@@ -110,7 +114,7 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		double from = getBalance(ownerFrom, ownerFromType);
 		if (from >= value) {
 			int check = 0;
-			check += changeBalance(ownerFrom, ownerFromType, -(value)) ? 1: 0;
+			check += changeBalance(ownerFrom, ownerFromType, -(value)) ? 1 : 0;
 			check += changeBalance(ownerTo, ownerToType, value) ? 1 : 0;
 			return check == 2;
 		}
@@ -119,7 +123,10 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 
 	@Override
 	public double addAccount(UUID owner, String ownerType) {
-		String sql = "INSERT INTO tblAccounts (Owner, type, balance) " +
+		String sql = "INSERT INTO "+ map_Money.get(tblMoney.TABLE_NAME) +" ("+
+				map_Money.get(tblMoney.OWNER) +", "+
+				map_Money.get(tblMoney.TYPE) +", "+
+				map_Money.get(tblMoney.BALANCE) +") "+
 				"VALUES (? ,? ,?)";
 		PreparedStatement st = null;
 		try {

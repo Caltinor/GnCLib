@@ -13,7 +13,6 @@ public class ConfigCore {
 	 * overwriting values.
 	 */
 	//Data Storage config values
-	public static boolean MARKET_USE_EXTERNAL_DB = false;
 	public static String DB_PORT = "";
 	public static String DB_NAME = "GNC";
 	public static String DB_SERVICE = "h2";
@@ -73,16 +72,13 @@ public class ConfigCore {
 	 * @param password password for the user
 	 * @return a log-printable confirmation of the method running
 	 */
-	public static String defineDataStorageConfigValues(boolean useExternalStorage, String port, String name, String service, String url, String user, String password) {
-		MARKET_USE_EXTERNAL_DB = useExternalStorage;
-		if (useExternalStorage) {
-			DB_PORT = port;
-			DB_NAME = name;
-			DB_SERVICE = service;
-			DB_URL = url;
-			DB_USER = user;
-			DB_PASS = password;
-		}
+	public static String defineDataStorageConfigValues(String port, String name, String service, String url, String user, String password) {
+		DB_PORT = port;
+		DB_NAME = name;
+		DB_SERVICE = service;
+		DB_URL = url;
+		DB_USER = user;
+		DB_PASS = password;
 		return "Data Storage Values uploaded to Lib Variables";
 	}
 	
@@ -121,12 +117,12 @@ public class ConfigCore {
 		return "Protection Values uploaded to Lib Variables";
 	}
 	
-	public static String defineTradeConfigValues(double globalTaxBuy, double globalTaxSell, double auctionTaxSell, long auctionOpenDuration) {
+	public static String defineTradeConfigValues(String saveName, double globalTaxBuy, double globalTaxSell, double auctionTaxSell, long auctionOpenDuration) {
 		MARKET_GLOBAL_TAX_BUY = globalTaxBuy;
 		MARKET_GLOBAL_TAX_SELL = globalTaxSell;
 		MARKET_AUCTION_TAX_SELL = auctionTaxSell;
 		AUCTION_OPEN_DURATION = auctionOpenDuration;
-		LogicTrade.init();
+		LogicTrade.init(saveName);
 		return "Trade Values uploaded to Lib Variables";
 	}
 }

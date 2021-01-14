@@ -43,7 +43,7 @@ public class LogicMoney {
 		return service.getBalance(owner, resourceLocation);
 	}
 	
-	public boolean setBalance(UUID owner, String resourceLocation, double value) {
+	public static boolean setBalance(UUID owner, String resourceLocation, double value) {
 		return service.setBalance(owner, resourceLocation, value);
 	}
 
