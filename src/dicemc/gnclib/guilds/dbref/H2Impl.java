@@ -1,6 +1,6 @@
 package dicemc.gnclib.guilds.dbref;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,17 +17,21 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	public H2Impl(String worldName) {}
 
 	@Override
-	public List<String> defineTables() {
-		List<String> list = new ArrayList<String>();
+	public Map<String, String> defineTables() {
+		Map<String, String> map = new HashMap<String, String>();
+		String tbl = "";
 		String sql = "guildTable"; //TODO Define table
-		list.add(sql);
+		map.put(tbl, sql);
+		tbl = "";
 		sql = "memberTable"; //TODO Define table
-		list.add(sql);
+		map.put(tbl, sql);
+		tbl = "";
 		sql = "rankTable"; //TODO Define table
-		list.add(sql);
+		map.put(tbl, sql);
+		tbl = "";
 		sql = "rankPermsTable"; //TODO Define table
-		list.add(sql);
-		return list;
+		map.put(tbl, sql);
+		return map;
 	}
 
 	@Override
