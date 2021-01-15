@@ -18,9 +18,11 @@ public class RunVars {
 	private static void playerSetup() {
 		playerMap.put(GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName);
 		playerMap.put(UUID.fromString("3b2e6a34-043f-4059-87b3-e243af392d69"), "Madood");
+		System.out.println("=====ACCOUNT PRINTOUT======");
 		for (Map.Entry<UUID, String> entries : playerMap.entrySet()) {
 			System.out.println("Balance "+entries.getValue()+ "= $"+LogicMoney.getBalance(entries.getKey(), LogicMoney.AccountType.PLAYER.rl));
 		}
+		System.out.println();
 	}
 	
 	private static void worldGenerate() {
