@@ -19,10 +19,12 @@ lib.guild.permission.set.success=Permission Set
 lib.guild.permission.set.failure=Permission Already Defined
 lib.guild.permission.remove.success=Permission Removed
 lib.guild.permission.remove.failure=Permission Did Not Previously Exist
+
 lib.market.create.success=Transaction Posted
 lib.market.create.failure.funds=Insufficient Funds
 lib.market.create.failure.local=Not a local Sale
 lib.market.create.failure.typemismatch=Entry does not match Type
+lib.market.create.failure.sql=Database Insertion Failed
 lib.market.placebid.success=Bid Placed
 lib.market.placebid.failure.fund=Insufficient Funds
 lib.market.placebid.failure.toolow=Value does not exceed highest bid
@@ -31,7 +33,7 @@ lib.market.storage.pull.failure.count=The requested amount exceeds the stored qu
 lib.market.storage.pull.failure.missing=The item could not be found in storage
 lib.market.supplychange.success=Transaction Supply Modified
 lib.market.supplychange.failure.negative=Requested reduction exceeds existing stock.
-lib.market.supplychange.failure.missing=The item could not be found in storage
+lib.market.supplychange.failure.missing=The item could not be found in market
 lib.market.supplychange.failure.fund=Insufficient funds for market fees.
 lib.market.offer.success=Offer submitted
 lib.market.offer.failure.type=Invalid Entry Type passed
@@ -40,10 +42,15 @@ lib.market.offer.failure.fund=Insufficient funds to cover market fees
 lib.market.acceptoffer.success=Offer Accepted
 lib.market.acceptoffer.failure.type=Invalid Market Type.
 lib.market.acceptoffer.failure.count=Current sale quantity is lower than the requested amount.
+lib.market.acceptoffer.failure.missing=Record Missing from Database
+lib.market.accetpoffer.failure.insert=Unable to add historical record
 lib.market.executetrans.success=Transaction Successful
 lib.market.executetrans.failure.type=Invalid action for this market
 lib.market.executetrans.failure.fund=Insufficient funds to complete transaction
 lib.market.executetrans.failure.count=Transaction stock is less than the requested amount
+lib.market.executetrans.failure.missing=Record missing in database
+lib.market.close.success=Market Entry Closed.  Offers Refunded
+lib.market.close.failure.missing=Market Entry Missing
 
 #Old values below this line
 item.moneybag.name=Moneybag

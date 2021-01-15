@@ -20,28 +20,34 @@ import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class LogicTrade implements IDBImplTrade{
-	public static IDBImplTrade service;
-	public static Map<MarketType, Marketplace> Marketplaces = new HashMap<MarketType, Marketplace>();
+	//Singletone Block
+	private static final LogicTrade INSTANCE = new LogicTrade();
+	private LogicTrade() {}
+	public static LogicTrade get() {return INSTANCE;}
 	
-	public static void init() {
-		service = setService();
+	//Primary logical elements
+	private static IDBImplTrade service;
+	private static Map<MarketType, Marketplace> Marketplaces = new HashMap<MarketType, Marketplace>();
+	
+	public static void init(String saveName) {
+		service = setService(saveName);
 		Marketplaces.put(MarketType.LOCAL, new Marketplace("Local"));
 		Marketplaces.put(MarketType.GLOBAL, new Marketplace("Global", ConfigCore.MARKET_GLOBAL_TAX_BUY, ConfigCore.MARKET_GLOBAL_TAX_SELL));
 		Marketplaces.put(MarketType.AUCTION, new Marketplace("Auction", 0d, ConfigCore.MARKET_AUCTION_TAX_SELL));
 		Marketplaces.put(MarketType.SERVER, new Marketplace("Server"));
 	}
 	
-	private static IDBImplTrade setService() {
+	private static IDBImplTrade setService(String saveName) {
 		switch (ConfigCore.DBService.getFromString()) {
 		case H2: {
-			return new H2Impl();
+			return new H2Impl(saveName);
 		}
 		case MY_SQL: {
 			break;
 		}
 		default:
 		}
-		return new H2Impl();
+		return new H2Impl(saveName);
 	}
 
 	/** Takes the entry and performs account transactions for the type
@@ -53,9 +59,6 @@ public class LogicTrade implements IDBImplTrade{
 	 */
 	@Override
 	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
-		/* - apply sell taxes
-		 * - [DB] check if existing sale exists already
-		 */
 		switch (type) {
 		case LOCAL: {
 			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");
@@ -213,8 +216,8 @@ public class LogicTrade implements IDBImplTrade{
 	}
 
 	@Override
-	public List<EntryOffer> getOfferList(int id) {
-		return service.getOfferList(id);
+	public List<EntryOffer> getOfferList(int id, MarketType type) {
+		return service.getOfferList(id, type);
 	}
 
 	@Override

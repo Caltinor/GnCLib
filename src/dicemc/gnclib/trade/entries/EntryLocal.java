@@ -93,5 +93,21 @@ public class EntryLocal  implements IBufferable, IMarketEntry{
 	@Override
 	public boolean getGiveItem() {return giveItem;}	
 	public UUID getLocality() {return locality;}
+	@Override
+	public String getVendorName() {return vendorName;}
+	@Override
+	public String getStack() {return stack;}
+	@Override
+	public boolean getActive() {return openTransaction;}
+	@Override
+	public UUID getBuyerID() {return buyer;}
+	@Override
+	public String getBuyerName() {return buyerName;}
+	@Override
+	public long getBidEnd() {return 0L;}
+	@Override
+	public long getDTGPlaced() {return datePosted;}
+	@Override
+	public long getDTGClosed() {return dateClosed;}
 
 }

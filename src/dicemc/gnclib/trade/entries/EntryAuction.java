@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.configs.ConfigCore;
+import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
 
@@ -83,5 +84,23 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 	public int getStock() {return 1;}
 	@Override
 	public boolean getGiveItem() {return true;}
+	@Override
+	public String getVendorName() {return vendorName;}
+	@Override
+	public String getStack() {return stack;}
+	@Override
+	public boolean getActive() {return openTransaction;}
+	@Override
+	public UUID getBuyerID() {return buyer;}
+	@Override
+	public String getBuyerName() {return buyerName;}
+	@Override
+	public UUID getLocality() {return ComVars.NIL;}
+	@Override
+	public long getBidEnd() {return bidEnd;}
+	@Override
+	public long getDTGPlaced() {return datePosted;}
+	@Override
+	public long getDTGClosed() {return dateClosed;}
 
 }
