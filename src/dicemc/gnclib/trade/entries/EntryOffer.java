@@ -1,5 +1,6 @@
 package dicemc.gnclib.trade.entries;
 
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.util.IBufferable;
@@ -32,14 +33,37 @@ public class EntryOffer implements IBufferable{
 	
 	@Override
 	public ByteBuf writeBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		return null;
+		buf.writeInt(id);
+		buf.writeInt(transactionRef);
+		buf.writeInt(marketName.length());
+		buf.writeCharSequence(marketName, Charset.defaultCharset());
+		buf.writeInt(stack.length());
+		buf.writeCharSequence(stack, Charset.defaultCharset());
+		buf.writeInt(offererName.length());
+		buf.writeCharSequence(offererName, Charset.defaultCharset());
+		buf.writeInt(offerer.toString().length());
+		buf.writeCharSequence(offerer.toString(), Charset.defaultCharset());
+		buf.writeLong(placedDate);
+		buf.writeInt(requestedAmount);
+		buf.writeInt(offeredAmount);
+		return buf;
 	}
 
 	@Override
 	public void readBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		
+		id = buf.readInt();
+		transactionRef = buf.readInt();
+		int len = buf.readInt();
+		marketName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
+		len = buf.readInt();
+		stack = buf.readCharSequence(len, Charset.defaultCharset()).toString();
+		len = buf.readInt();
+		offererName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
+		len = buf.readInt();
+		offerer = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
+		placedDate = buf.readLong();
+		requestedAmount = buf.readInt();
+		offeredAmount = buf.readInt();
 	}
 
 	public int getID() {return id;}

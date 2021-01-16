@@ -77,6 +77,7 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 		datePosted = buf.readLong();
 		dateClosed = buf.readLong();
 	}
+	
 	@Override
 	public int getID() {return id;}
 	@Override

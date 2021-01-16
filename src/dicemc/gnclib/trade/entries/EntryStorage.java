@@ -1,5 +1,6 @@
 package dicemc.gnclib.trade.entries;
 
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.util.IBufferable;
@@ -23,14 +24,23 @@ public class EntryStorage implements IBufferable{
 	
 	@Override
 	public ByteBuf writeBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		return null;
+		buf.writeInt(id);
+		buf.writeInt(count);
+		buf.writeInt(owner.toString().length());
+		buf.writeCharSequence(owner.toString(), Charset.defaultCharset());
+		buf.writeInt(stack.length());
+		buf.writeCharSequence(stack, Charset.defaultCharset());
+		return buf;
 	}
 
 	@Override
 	public void readBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		
+		id = buf.readInt();
+		count = buf.readInt();
+		int len = buf.readInt();
+		owner = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
+		len = buf.readInt();
+		stack = buf.readCharSequence(len, Charset.defaultCharset()).toString();
 	}
 	
 	public int getID() {return id;}

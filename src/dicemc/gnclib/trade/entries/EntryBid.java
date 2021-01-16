@@ -1,5 +1,6 @@
 package dicemc.gnclib.trade.entries;
 
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.util.IBufferable;
@@ -26,14 +27,27 @@ public class EntryBid implements IBufferable{
 	
 	@Override
 	public ByteBuf writeBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		return null;
+		buf.writeInt(id);
+		buf.writeInt(transactionRef);
+		buf.writeInt(bidder.toString().length());
+		buf.writeCharSequence(bidder.toString(), Charset.defaultCharset());
+		buf.writeInt(bidderName.length());
+		buf.writeCharSequence(bidderName, Charset.defaultCharset());
+		buf.writeLong(placedDate);
+		buf.writeDouble(value);
+		return buf;
 	}
 
 	@Override
 	public void readBytes(ByteBuf buf) {
-		// TODO Auto-generated method stub
-		
+		id = buf.readInt();
+		transactionRef = buf.readInt();
+		int len = buf.readInt();
+		bidder = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
+		len = buf.readInt();
+		bidderName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
+		placedDate = buf.readLong();
+		value = buf.readDouble();
 	}
 	
 	public int getID() {return id;}
