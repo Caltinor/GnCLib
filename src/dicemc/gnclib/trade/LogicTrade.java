@@ -184,7 +184,7 @@ public class LogicTrade implements IDBImplTrade{
 
 	@Override
 	public TranslatableResult<TradeResult> pullFromStorage(EntryStorage entry, int count) {
-		if (count > entry.count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "");
+		if (count > entry.count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.pull.failure.count");
 		return service.pullFromStorage(entry, count);
 	}
 
@@ -201,13 +201,13 @@ public class LogicTrade implements IDBImplTrade{
 	}
 
 	@Override
-	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int indexEnd, Map<FilterType, String> filters) {
-		return service.getMarketList(type, indexStart, indexEnd, filters);
+	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
+		return service.getMarketList(type, indexStart, rowCount, filters);
 	}
 
 	@Override
-	public List<EntryStorage> getStorageList(int indexStart, int indexEnd, Map<FilterType, String> filters) {
-		return service.getStorageList(indexStart, indexEnd, filters);
+	public List<EntryStorage> getStorageList(int indexStart, int rowCount, UUID owner) {
+		return service.getStorageList(indexStart, rowCount, owner);
 	}
 
 	@Override
@@ -221,8 +221,8 @@ public class LogicTrade implements IDBImplTrade{
 	}
 
 	@Override
-	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int indexEnd, Map<FilterType, String> filters) {
-		return service.getTransactionHistory(type, indexStart, indexEnd, filters);
+	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
+		return service.getTransactionHistory(type, indexStart, rowCount, filters);
 	}
 	
 }

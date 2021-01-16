@@ -14,7 +14,7 @@ import dicemc.gnclib.util.TranslatableResult;
 public interface IDBImplTrade {
 	public static enum TradeResult {SUCCESS, FAILURE}
 	public static enum MarketType {LOCAL, GLOBAL, AUCTION, SERVER}
-	public static enum FilterType {NAME, SOURCE, DATE_FROM, DATE_TO, IS_OFFER}
+	public static enum FilterType {NAME, SOURCE, PRICE_FROM, PRICE_TO, IS_OFFER}
 	public static enum tblMarkets {ID, ITEM, VENDOR_ID, VENDOR_NAME, LOCALITY, BID_END, PRICE,
 		VENDOR_GIVE_ITEM, STOCK, ACTIVE_TRANSACTION, BUYER_ID, BUYER_NAME, DTG_PLACED, DTG_CLOSED}
 	public static enum tblBids {TABLE_NAME, ID, TRANSACTION_ID, BIDDER_ID, BIDDER_NAME, DTG_PLACED, PRICE}
@@ -42,13 +42,13 @@ public interface IDBImplTrade {
 	
 	TranslatableResult<TradeResult> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply);
 	
-	List<IMarketEntry> getMarketList(MarketType type, int indexStart, int indexEnd, Map<FilterType, String> filters);
+	List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters);
 	
-	List<EntryStorage> getStorageList(int indexStart, int indexEnd, Map<FilterType, String> filters);
+	List<EntryStorage> getStorageList(int indexStart, int rowCount, UUID owner);
 	
 	List<EntryBid> getBidList(int id);
 	
 	List<EntryOffer> getOfferList(int id, MarketType type);
 	
-	List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int indexEnd, Map<FilterType, String> filters);
+	List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters);
 }
