@@ -3,7 +3,7 @@ package dicemc.gnclib.realestate;
 public class WhitelistEntry {
 	public static enum UpdateType {BREAK, INTERACT}
 	private boolean canBreak, canInteract;
-	/*TODO if more specific protection features are added, include them and update constructors and getters/setters
+	/* if more specific protection features are added, include them and update constructors and getters/setters
 	* Examples include "canPlace", "canDamage", "canTrample", "canBurn"
 	*/
 	public WhitelistEntry() {
