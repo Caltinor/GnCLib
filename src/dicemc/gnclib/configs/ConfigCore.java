@@ -45,6 +45,7 @@ public class ConfigCore {
 	public static double MARKET_GLOBAL_TAX_SELL = 0.1;
 	public static double MARKET_AUCTION_TAX_SELL = 0.3;
 	public static long AUCTION_OPEN_DURATION = 259200000L;
+	public static int PAGE_SIZE = 50;
 	
 	public enum DBService {
 		H2("h2"),
@@ -117,11 +118,12 @@ public class ConfigCore {
 		return "Protection Values uploaded to Lib Variables";
 	}
 	
-	public static String defineTradeConfigValues(String saveName, double globalTaxBuy, double globalTaxSell, double auctionTaxSell, long auctionOpenDuration) {
+	public static String defineTradeConfigValues(String saveName, double globalTaxBuy, double globalTaxSell, double auctionTaxSell, long auctionOpenDuration, int pageSize) {
 		MARKET_GLOBAL_TAX_BUY = globalTaxBuy;
 		MARKET_GLOBAL_TAX_SELL = globalTaxSell;
 		MARKET_AUCTION_TAX_SELL = auctionTaxSell;
 		AUCTION_OPEN_DURATION = auctionOpenDuration;
+		PAGE_SIZE = pageSize;
 		LogicTrade.init(saveName);
 		return "Trade Values uploaded to Lib Variables";
 	}
