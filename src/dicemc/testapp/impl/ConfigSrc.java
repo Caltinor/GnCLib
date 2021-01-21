@@ -41,7 +41,7 @@ public class ConfigSrc {
 				0.1, 			//globalTaxBuy, 
 				0.1, 			//globalTaxSell, 
 				0.3,			//auctionTaxSell, 
-				259200000L,		//auctionOpenDuration
+				600000L,		//auctionOpenDuration
 				25);			//pageSize
 	}
 }

@@ -30,7 +30,7 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		this.openTransaction = open;
 	}
 	public EntryAuction(UUID vendor, String vendorName, String itemStack, double price) {
-		this(0, itemStack, vendorName, null, vendor, null, System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
+		this(0, itemStack, vendorName, "", vendor, ComVars.NIL, System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
 	}
 	
 	@Override

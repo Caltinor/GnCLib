@@ -32,7 +32,7 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 		this.dateClosed = dateClosed;
 	}
 	public EntryGlobal(UUID vendor, String vendorName, String itemStack, int stock, double price, boolean giveItem) {
-		this(-1, itemStack, vendorName, null, vendor, null, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
+		this(-1, itemStack, vendorName, "", vendor, ComVars.NIL, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
 	}
 	
 	@Override

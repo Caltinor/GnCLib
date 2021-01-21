@@ -20,8 +20,10 @@ import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryServer;
 import dicemc.gnclib.trade.entries.EntryStorage;
 import dicemc.gnclib.trade.entries.IMarketEntry;
+import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.IDatabase;
 import dicemc.gnclib.util.TranslatableResult;
+import dicemc.testapp.GnCLibConsole;
 
 public class H2Impl implements IDBImplTrade, IDatabase{
 	public static final Map<tblMarkets, String> map_Markets = define_Markets();
@@ -50,6 +52,23 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				executeUPDATE(st);
 			}
 		} catch (SQLException e) {e.printStackTrace();}	
+		test();
+	}
+	
+	public void test() {
+		PreparedStatement st = null;
+		String sql = "UPDATE " + marketTables.get(MarketType.GLOBAL) + " SET " + 
+				map_Markets.get(tblMarkets.BUYER_ID) + "=? AND " +
+				map_Markets.get(tblMarkets.BUYER_NAME) + " =? WHERE " +
+				map_Markets.get(tblMarkets.ID) + " =?";
+		try {
+			st = con.prepareStatement(sql);
+			st.setObject(1, GnCLibConsole.testPlayer);
+			st.setString(2, GnCLibConsole.testPlayerName);
+			st.setInt(3, 0);
+			executeUPDATE(st);
+		} catch(SQLException e) {e.printStackTrace();}
+		System.out.println("test succeeded");
 	}
 	
 	@Override
@@ -61,7 +80,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 		map.put(marketTables.get(MarketType.SERVER), defineMarketTable(MarketType.SERVER));
 		String sql = " (" + map_Bids.get(tblBids.ID)	+" INT NOT NULL AUTO_INCREMENT, " +
 				map_Bids.get(tblBids.TRANSACTION_ID)	+" INT NOT NULL, " +
-				map_Bids.get(tblBids.BIDDER_ID)			+" VARCHAR(36) NOT NULL, " +
+				map_Bids.get(tblBids.BIDDER_ID)			+" UUID NOT NULL, " +
 				map_Bids.get(tblBids.BIDDER_NAME)		+" VARCHAR(32) NOT NULL, " +
 				map_Bids.get(tblBids.PRICE)				+" DOUBLE NOT NULL, " +
 				map_Bids.get(tblBids.DTG_PLACED)		+" MEDIUMTEXT NOT NULL, " +
@@ -71,7 +90,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				map_Offers.get(tblOffers.TRANS_ID)		+" INT NOT NULL, " +
 				map_Offers.get(tblOffers.MARKET_NAME)	+" VARCHAR(16) NOT NULL, " +
 				map_Offers.get(tblOffers.ITEM)			+" LONGTEXT NOT NULL, " +
-				map_Offers.get(tblOffers.OFFERER) 		+" VARCHAR(36) NOT NULL, " +
+				map_Offers.get(tblOffers.OFFERER) 		+" UUID NOT NULL, " +
 				map_Offers.get(tblOffers.OFFERER_NAME)	+" VARCHAR(32) NOT NULL, " +
 				map_Offers.get(tblOffers.DTG_PLACED)	+" MEDIUMTEXT NOT NULL, " +
 				map_Offers.get(tblOffers.REQUESTED_AMOUNT)+" INT NOT NULL, " +
@@ -79,7 +98,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				"PRIMARY KEY ("+map_Offers.get(tblOffers.ID) + "));";
 		map.put(map_Offers.get(tblOffers.TABLE_NAME), sql);
 		sql = " (" + map_Storage.get(tblStorage.ID) 		+" INT NOT NULL AUTO_INCREMENT, " +
-				map_Storage.get(tblStorage.OWNER) 			+" VARCHAR(36) NOT NULL, " +
+				map_Storage.get(tblStorage.OWNER) 			+" UUID NOT NULL, " +
 				map_Storage.get(tblStorage.ITEM) 			+" LONGTEXT NOT NULL, " +
 				map_Storage.get(tblStorage.QUANTITY) 		+" INT NOT NULL, " + 
 				"PRIMARY KEY (" + map_Storage.get(tblStorage.ID) + "));";
@@ -90,15 +109,16 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	private String defineMarketTable(MarketType type) {
 		String str = " ("+ map_Markets.get(tblMarkets.ID) 			+" INT NOT NULL AUTO_INCREMENT, " +
 				map_Markets.get(tblMarkets.ITEM) 				+" LONGTEXT NOT NULL, " +
-				(!type.equals(MarketType.SERVER) ? map_Markets.get(tblMarkets.VENDOR_ID)	+" VARCHAR(36) NOT NULL, " : "") +
+				(!type.equals(MarketType.SERVER) ? map_Markets.get(tblMarkets.VENDOR_ID)	+" UUID NOT NULL, " : "") +
 				(!type.equals(MarketType.SERVER) ? map_Markets.get(tblMarkets.VENDOR_NAME)	+" VARCHAR(32) NOT NULL, " : "") +
-				(type.equals(MarketType.LOCAL) ? map_Markets.get(tblMarkets.LOCALITY)		+" VARCHAR(36) NOT NULL, " : "") +
+				(type.equals(MarketType.LOCAL) ? map_Markets.get(tblMarkets.LOCALITY)		+" UUID NOT NULL, " : "") +
 				(type.equals(MarketType.AUCTION) ? map_Markets.get(tblMarkets.BID_END)		+" MEDIUMTEXT NOT NULL, "  : "") +
 				map_Markets.get(tblMarkets.PRICE)				+" DOUBLE NOT NULL, " +
 				(!type.equals(MarketType.AUCTION) ? map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM)	+" TINYINT(1) NOT NULL, " : "") +
 				(!type.equals(MarketType.AUCTION) ? map_Markets.get(tblMarkets.STOCK)			+" INT NOT NULL, " : "") +
 				map_Markets.get(tblMarkets.ACTIVE_TRANSACTION)	+" TINYINT(1) NOT NULL, " +
-				map_Markets.get(tblMarkets.BUYER_ID)			+" VARCHAR(36) NOT NULL, " +
+				map_Markets.get(tblMarkets.BUYER_ID)			+" UUID, " +
+				map_Markets.get(tblMarkets.BUYER_NAME)			+" VARCHAR(32), " +
 				map_Markets.get(tblMarkets.DTG_PLACED)			+" MEDIUMTEXT NOT NULL, " +
 				map_Markets.get(tblMarkets.DTG_CLOSED)			+" MEDIUMTEXT NOT NULL, " +
 				"PRIMARY KEY (" + map_Markets.get(tblMarkets.ID) + "));";
@@ -118,12 +138,12 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					";";
 			try {
 				st = con.prepareStatement(sql);
-				int f = 1;
-				st.setString(f, entry.getStack());
-				st.setString(f++, entry.getVendorID().toString());
-				st.setDouble(f++, entry.getPrice());
-				st.setBoolean(f++, entry.getGiveItem());
-				if (type.equals(MarketType.LOCAL)) st.setString(f++, entry.getLocality().toString());
+				int f = 0;
+				st.setString(++f, entry.getStack());
+				st.setObject(++f, entry.getVendorID());
+				st.setDouble(++f, entry.getPrice());
+				st.setBoolean(++f, entry.getGiveItem());
+				if (type.equals(MarketType.LOCAL)) st.setString(++f, entry.getLocality().toString());
 				ResultSet rs = executeSELECT(st);
 				if (rs.isBeforeFirst()) {
 					rs.next();
@@ -131,14 +151,14 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
 					double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
 					boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-					UUID buyer = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.BUYER_ID)));
+					UUID buyer = (UUID) rs.getObject(map_Markets.get(tblMarkets.BUYER_ID));
 					String buyerName = rs.getString(map_Markets.get(tblMarkets.BUYER_NAME));
 					long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
 					long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
 					switch (type) {
 					case LOCAL: {
-						UUID locality = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.LOCALITY)));
-						UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
+						UUID locality = (UUID) rs.getObject(map_Markets.get(tblMarkets.LOCALITY));
+						UUID vendor = (UUID) rs.getObject(map_Markets.get(tblMarkets.VENDOR_ID));
 						String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
 						boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 						int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
@@ -147,7 +167,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 						 return changeTransactionSupply(type, newEntry, entry.getStock());
 					}
 					case GLOBAL: {
-						UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
+						UUID vendor = (UUID) rs.getObject(map_Markets.get(tblMarkets.VENDOR_ID));
 						String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
 						boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 						int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
@@ -166,25 +186,25 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				}
 			} catch (SQLException e) {e.printStackTrace();}
 		}
-		String sql = "INSERT INTO " + marketTables.get(type) + "(" +
+		String sql = "INSERT INTO " + marketTables.get(type) + " (" +
 				map_Markets.get(tblMarkets.ITEM) +", " +
 				map_Markets.get(tblMarkets.PRICE) +", " +
 				map_Markets.get(tblMarkets.ACTIVE_TRANSACTION) +", " +
 				map_Markets.get(tblMarkets.BUYER_ID) +", " +
 				map_Markets.get(tblMarkets.BUYER_NAME) +", " +
 				map_Markets.get(tblMarkets.DTG_PLACED) +", " +
-				map_Markets.get(tblMarkets.DTG_CLOSED) +", " +
+				map_Markets.get(tblMarkets.DTG_CLOSED) +
 				(type.equals(MarketType.LOCAL) ? 
-					map_Markets.get(tblMarkets.LOCALITY) +", " : "") +
+						", " +map_Markets.get(tblMarkets.LOCALITY) : "") +
 				(type.equals(MarketType.AUCTION) ? 
-						map_Markets.get(tblMarkets.BID_END) +", " : "") +
+						", " +map_Markets.get(tblMarkets.BID_END) : "") +
 				(!type.equals(MarketType.SERVER) ? 
-						map_Markets.get(tblMarkets.VENDOR_ID) +", " +
-						map_Markets.get(tblMarkets.VENDOR_NAME) +", " : "") +
+						", " +map_Markets.get(tblMarkets.VENDOR_ID) +
+						", " +map_Markets.get(tblMarkets.VENDOR_NAME) : "") +
 				(!type.equals(MarketType.AUCTION) ? 
-						map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) +", " +
-						map_Markets.get(tblMarkets.STOCK) +", " : "") +
-				") VALUES (?, ?, ?, ?, ?, ?" +
+						", " +map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) +
+						", " +map_Markets.get(tblMarkets.STOCK) : "") +
+				") VALUES (?, ?, ?, ?, ?, ?, ?" +
 				(type.equals(MarketType.LOCAL) ? ", ?" : "") +
 				(type.equals(MarketType.AUCTION) ? ", ?" : "") +
 				(!type.equals(MarketType.SERVER) ? ", ?, ?" : "") +
@@ -192,24 +212,24 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				");";
 		try {
 			st = con.prepareStatement(sql);
-			int f = 1;
-			st.setString(f, entry.getStack());
-			st.setDouble(f++, entry.getPrice());
-			st.setBoolean(f++, entry.getActive());
-			st.setString(f++, entry.getBuyerID().toString());
-			st.setString(f++, entry.getBuyerName());
-			st.setLong(f++, entry.getDTGPlaced());
-			st.setLong(f++, entry.getDTGClosed());
-			if (type.equals(MarketType.LOCAL)) st.setString(f++, entry.getLocality().toString());
-			if (type.equals(MarketType.AUCTION)) st.setLong(f++, entry.getBidEnd());
+			int f = 0;
+			st.setString(++f, entry.getStack());
+			st.setDouble(++f, entry.getPrice());
+			st.setBoolean(++f, entry.getActive());
+			st.setObject(++f, null);
+			st.setString(++f, null);
+			st.setLong(++f, entry.getDTGPlaced());
+			st.setLong(++f, entry.getDTGClosed());
+			if (type.equals(MarketType.LOCAL)) st.setObject(++f, entry.getLocality());
+			if (type.equals(MarketType.AUCTION)) st.setLong(++f, entry.getBidEnd());
 			if (!type.equals(MarketType.SERVER)) { 
-				st.setString(f++, entry.getVendorID().toString());
-				st.setString(f++, entry.getVendorName());}
+				st.setObject(++f, entry.getVendorID());
+				st.setString(++f, entry.getVendorName());}
 			if (!type.equals(MarketType.AUCTION)) {
-				st.setBoolean(f++, entry.getGiveItem());
-				st.setInt(f++, entry.getStock());
+				st.setBoolean(++f, entry.getGiveItem());
+				st.setInt(++f, entry.getStock());
 			}
-			if (executeUPDATE(st) == 0 ) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.sql");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.sql");
 		} catch (SQLException e) {e.printStackTrace();}
 		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.create.success");
 	}
@@ -262,7 +282,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					map_Markets.get(tblMarkets.ID) + " =?";
 			try {
 				st = con.prepareStatement(sql);
-				st.setString(1, offer.offerer.toString());
+				st.setObject(1, offer.offerer);
 				st.setString(2, offer.offererName);
 				st.setDouble(3, 0);
 				st.setInt(4, entry.getID());
@@ -299,19 +319,19 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					");";
 			try {
 				st = con.prepareStatement(sql);
-				int f = 1;
-				st.setString(f, entry.getStack());
-				st.setDouble(f++, 0);
-				st.setBoolean(f++, false);
-				st.setString(f++, offer.offerer.toString());
-				st.setString(f++, offer.offererName);
-				st.setLong(f++, entry.getDTGPlaced());
-				st.setLong(f++, System.currentTimeMillis());
-				st.setString(f++, entry.getVendorID().toString());
-				st.setString(f++, entry.getVendorName());
-				st.setBoolean(f++, entry.getGiveItem());
-				st.setInt(f++, offer.requestedAmount);
-				if (type.equals(MarketType.LOCAL)) st.setString(f++, entry.getLocality().toString());
+				int f = 0;
+				st.setString(++f, entry.getStack());
+				st.setDouble(++f, 0);
+				st.setBoolean(++f, false);
+				st.setObject(++f, offer.offerer);
+				st.setString(++f, offer.offererName);
+				st.setLong(++f, entry.getDTGPlaced());
+				st.setLong(++f, System.currentTimeMillis());
+				st.setObject(++f, entry.getVendorID());
+				st.setString(++f, entry.getVendorName());
+				st.setBoolean(++f, entry.getGiveItem());
+				st.setInt(++f, offer.requestedAmount);
+				if (type.equals(MarketType.LOCAL)) st.setObject(++f, entry.getLocality());
 				if (executeUPDATE(st) == 0 ) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.acceptoffer.failure.insert");
 			} catch (SQLException e) {e.printStackTrace();}
 		}
@@ -337,7 +357,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					map_Markets.get(tblMarkets.ID) + " =?";
 			try {
 				st = con.prepareStatement(sql);
-				st.setString(1, buyer.toString());
+				st.setObject(1, buyer);
 				st.setString(2, buyerName);
 				st.setInt(3, entry.getID());
 				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.missing");
@@ -365,27 +385,27 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					map_Markets.get(tblMarkets.VENDOR_ID) +", " +
 					map_Markets.get(tblMarkets.VENDOR_NAME) +", " +
 					map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) +", " +
-					map_Markets.get(tblMarkets.STOCK) +", " +
+					map_Markets.get(tblMarkets.STOCK) +
 					(type.equals(MarketType.LOCAL) ? 
-						map_Markets.get(tblMarkets.LOCALITY) : "") +
+						", "+ map_Markets.get(tblMarkets.LOCALITY) : "") +
 					") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?" +
 					(type.equals(MarketType.LOCAL) ? ", ?" : "") +
 					");";
 			try {
 				st = con.prepareStatement(sql);
-				int f = 1;
-				st.setString(f, entry.getStack());
-				st.setDouble(f++, entry.getPrice());
-				st.setBoolean(f++, false);
-				st.setString(f++, buyer.toString());
-				st.setString(f++, buyerName);
-				st.setLong(f++, entry.getDTGPlaced());
-				st.setLong(f++, System.currentTimeMillis());
-				st.setString(f++, entry.getVendorID().toString());
-				st.setString(f++, entry.getVendorName());
-				st.setBoolean(f++, entry.getGiveItem());
-				st.setInt(f++, count);
-				if (type.equals(MarketType.LOCAL)) st.setString(f++, entry.getLocality().toString());
+				int f = 0;
+				st.setString(++f, entry.getStack());
+				st.setDouble(++f, entry.getPrice());
+				st.setBoolean(++f, false);
+				st.setObject(++f, buyer);
+				st.setString(++f, buyerName);
+				st.setLong(++f, entry.getDTGPlaced());
+				st.setLong(++f, System.currentTimeMillis());
+				st.setObject(++f, entry.getVendorID());
+				st.setString(++f, entry.getVendorName());
+				st.setBoolean(++f, entry.getGiveItem());
+				st.setInt(++f, count);
+				if (type.equals(MarketType.LOCAL)) st.setObject(++f, entry.getLocality());
 				if (executeUPDATE(st) == 0 ) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.missing");
 			} catch (SQLException e) {e.printStackTrace();}
 		}
@@ -412,7 +432,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setString(1, offer.marketName);
 			st.setInt(2, entry.getID());
 			st.setString(3, offer.stack);
-			st.setString(4, offer.offerer.toString());
+			st.setObject(4, offer.offerer);
 			st.setString(5, offer.offererName);
 			st.setInt(6, offer.offeredAmount);
 			st.setInt(7, offer.requestedAmount);
@@ -423,25 +443,25 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> placeBid(EntryBid bid) {
+	public TranslatableResult<TradeResult> placeBid(EntryBid bid, double itemValue) {
 		PreparedStatement st = null;
-		String sql = "INSERT INTO " + map_Bids.get(tblBids.TABLE_NAME) + "(" +
+		String sql = "INSERT INTO " + map_Bids.get(tblBids.TABLE_NAME) + " (" +
 				map_Bids.get(tblBids.TRANSACTION_ID) + ", " +
 				map_Bids.get(tblBids.BIDDER_ID) + ", " +
 				map_Bids.get(tblBids.BIDDER_NAME) + ", " +
 				map_Bids.get(tblBids.PRICE) + ", " +
-				map_Bids.get(tblBids.DTG_PLACED) + ", " +
+				map_Bids.get(tblBids.DTG_PLACED) +
 				") VALUES (?, ?, ?, ?, ?);";
 		try {
 			st = con.prepareStatement(sql);
 			st.setInt(1, bid.getTransactionID());
-			st.setString(2, bid.bidder.toString());
+			st.setObject(2, bid.bidder);
 			st.setString(3, bid.bidderName);
 			st.setDouble(4, bid.value);
 			st.setLong(5, bid.placedDate);
 			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.insert");
 		} catch(SQLException e) {e.printStackTrace();}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.placebid.successs");
+		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.placebid.success");
 	}
 
 	@Override
@@ -477,7 +497,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			try {
 				st = con.prepareStatement(sql);
 				st.setString(1, entry.stack);
-				st.setString(2, entry.owner.toString());
+				st.setObject(2, entry.owner);
 				st.setInt(3, entry.count);
 				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.place.failure.insert");
 			} catch(SQLException e) {e.printStackTrace();}
@@ -529,30 +549,37 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 
 	@Override
-	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
+	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters, boolean isHistory) {
+		//Safety measures to ensure vendor and local are not referenced on tables that do not have them.
+		if (!type.equals(MarketType.LOCAL) && filters.containsKey(FilterType.SOURCE_LOCALITY)) filters.remove(FilterType.SOURCE_LOCALITY);
+		if (type.equals(MarketType.SERVER) && filters.containsKey(FilterType.SOURCE_VENDOR)) filters.remove(FilterType.SOURCE_VENDOR);
+		
 		List<IMarketEntry> list = new ArrayList<IMarketEntry>();
 		PreparedStatement st = null;
-		String sql = "SELECT * FROM " + marketTables.get(type) + " WHERE " +
-				map_Markets.get(tblMarkets.ITEM) + " LIKE \"*\" & ? & \"*\" AND (" +
-				map_Markets.get(tblMarkets.VENDOR_NAME) + " =? OR " +
-				map_Markets.get(tblMarkets.LOCALITY) + " =?) AND (" +
-				map_Markets.get(tblMarkets.PRICE) + " BETWEEN ? AND ?) AND " +
-				map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) + " =? AND " +
-				map_Markets.get(tblMarkets.ACTIVE_TRANSACTION) + " =? " +
-				(rowCount == -1 ? "" : "LIMIT ?") +
+		String sql = "SELECT * FROM " + marketTables.get(type) + " WHERE ((" +
+				map_Markets.get(tblMarkets.PRICE) + " BETWEEN ? AND ?)" +
+				(filters.containsKey(FilterType.SOURCE_VENDOR) ? " AND ("+ map_Markets.get(tblMarkets.VENDOR_ID) + " =?)" : "") +
+				(filters.containsKey(FilterType.SOURCE_LOCALITY) ? " AND (" + map_Markets.get(tblMarkets.LOCALITY) + " =?)" : "") + 			
+				(filters.containsKey(FilterType.INCLUDE_MY_SALES) ? " AND (" + map_Markets.get(tblMarkets.VENDOR_ID) + " <>?)" : "") +
+				(!type.equals(MarketType.AUCTION) ? " AND ("+ map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) + " =?)" : "") +
+				" AND (" + map_Markets.get(tblMarkets.ACTIVE_TRANSACTION) + " =?))" +
+				" ORDER BY " + 
+				(!filters.containsKey(FilterType.ORDER_PRICE) ? map_Markets.get(tblMarkets.DTG_PLACED) + " DESC " : "") +
+				(filters.containsKey(FilterType.ORDER_PRICE) ? map_Markets.get(tblMarkets.PRICE) +" "+ filters.get(FilterType.ORDER_PRICE)+" " : "") +
+				(rowCount == -1 ? "" : "LIMIT ? ") +
 				"OFFSET ?;";
 		try {
 			st = con.prepareStatement(sql);
-			int f = 1;
-			st.setString(f, filters.getOrDefault(FilterType.NAME, ""));
-			st.setString(f++, filters.getOrDefault(FilterType.SOURCE, ""));
-			st.setString(f++, filters.getOrDefault(FilterType.SOURCE, ""));
-			st.setDouble(f++, Double.valueOf(filters.getOrDefault(FilterType.PRICE_FROM, "0")));
-			st.setDouble(f++, Double.valueOf(filters.getOrDefault(FilterType.PRICE_FROM, String.valueOf(Double.MAX_VALUE))));
-			st.setBoolean(f++, Boolean.valueOf(filters.getOrDefault(FilterType.IS_OFFER, String.valueOf(true))));
-			st.setBoolean(f++, true);
-			if (rowCount >= 0) st.setInt(f++, rowCount);
-			st.setInt(f++, indexStart);
+			int f = 0;
+			st.setDouble(++f, Double.valueOf(filters.getOrDefault(FilterType.PRICE_FROM, "0")));
+			st.setDouble(++f, Double.valueOf(filters.getOrDefault(FilterType.PRICE_TO, String.valueOf(Double.MAX_VALUE))));
+			if (filters.containsKey(FilterType.SOURCE_VENDOR)) st.setObject(++f, UUID.fromString(filters.get(FilterType.SOURCE_VENDOR)));
+			if (filters.containsKey(FilterType.SOURCE_LOCALITY)) st.setObject(++f, UUID.fromString(filters.get(FilterType.SOURCE_LOCALITY)));		
+			if (filters.containsKey(FilterType.INCLUDE_MY_SALES)) st.setString(++f, filters.getOrDefault(FilterType.INCLUDE_MY_SALES, ComVars.NIL.toString()));
+			if (!type.equals(MarketType.AUCTION)) st.setBoolean(++f, Boolean.valueOf(filters.getOrDefault(FilterType.IS_OFFER, "true")));
+			st.setBoolean(++f, !isHistory);
+			if (rowCount >= 0) {st.setInt(++f, rowCount);}
+			st.setInt(++f, indexStart);
 			ResultSet rs = executeSELECT(st);
 			if (!rs.isBeforeFirst()) return list;
 			while (rs.next()) {
@@ -560,14 +587,14 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
 				double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
 				boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-				UUID buyer = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.BUYER_ID)));
+				UUID buyer = (UUID) rs.getObject(map_Markets.get(tblMarkets.BUYER_ID));
 				String buyerName = rs.getString(map_Markets.get(tblMarkets.BUYER_NAME));
 				long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
 				long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
 				switch (type) {
 				case LOCAL: {
-					UUID locality = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.LOCALITY)));
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
+					UUID locality = (UUID) rs.getObject(map_Markets.get(tblMarkets.LOCALITY));
+					UUID vendor = (UUID) rs.getObject(map_Markets.get(tblMarkets.VENDOR_ID));
 					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
 					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 					int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
@@ -577,7 +604,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					break;
 				}
 				case GLOBAL: {
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
+					UUID vendor = (UUID) rs.getObject(map_Markets.get(tblMarkets.VENDOR_ID));
 					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
 					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 					int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
@@ -587,10 +614,11 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					break;
 				}
 				case AUCTION: {
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
+					UUID vendor = (UUID) rs.getObject(map_Markets.get(tblMarkets.VENDOR_ID));
 					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
 					long bidEnd = rs.getLong(map_Markets.get(tblMarkets.BID_END));
 					EntryAuction newEntry = new EntryAuction(transID, stack, vendorName, buyerName, vendor, buyer, bidEnd, placed, closed, price, active);
+					if (bidEnd <= System.currentTimeMillis()) {expireBid(newEntry); break;}
 					list.add(newEntry);
 					break;
 				}
@@ -605,6 +633,14 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				default: }
 			}
  		} catch(SQLException e) {e.printStackTrace();}
+		if (type.equals(MarketType.AUCTION)) {
+			list.forEach(i -> {
+				List<EntryBid> bidList = getBidList(i.getID());
+				if (bidList.size()==0) return;
+				i = new EntryAuction(i.getID(), i.getStack(), i.getVendorName(), i.getBuyerName(), i.getVendorID(),
+						i.getBuyerID(), i.getBidEnd(), i.getDTGPlaced(), i.getDTGClosed(), bidList.get(bidList.size()-1).value, i.getActive());
+			});
+		}
 		return list;
 	}
 	//NOTE -1 rowCount == get ALL rows
@@ -618,10 +654,10 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				"OFFSET ?;";
 		try {
 			st = con.prepareStatement(sql);
-			int f = 1;
-			st.setString(f, owner.toString());
-			if (rowCount >= 0) st.setInt(f++, rowCount);
-			st.setInt(f++, indexStart);
+			int f = 0;
+			st.setObject(++f, owner);
+			if (rowCount >= 0) st.setInt(++f, rowCount);
+			st.setInt(++f, indexStart);
 			ResultSet rs = executeSELECT(st);
 			if (!rs.isBeforeFirst()) return list;
 			while (rs.next()) {
@@ -639,7 +675,8 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	public List<EntryBid> getBidList(int id) {
 		List<EntryBid> list = new ArrayList<EntryBid>();
 		PreparedStatement st = null;
-		String sql = "SELECT * FROM " + map_Bids.get(tblBids.TABLE_NAME) + " WHERE " + map_Bids.get(tblBids.ID) + " = ?;";
+		String sql = "SELECT * FROM " + map_Bids.get(tblBids.TABLE_NAME) + " WHERE " + map_Bids.get(tblBids.ID) + " = ? " +
+				"ORDER BY "+ map_Bids.get(tblBids.PRICE) +" ASC";
 		try {
 			st = con.prepareStatement(sql);
 			st.setInt(1, id);
@@ -648,7 +685,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			else {
 				while (rs.next()) {
 					int bidID = rs.getInt(map_Bids.get(tblBids.ID));
-					UUID bidder = UUID.fromString(rs.getString(map_Bids.get(tblBids.BIDDER_ID)));
+					UUID bidder = (UUID) rs.getObject(map_Bids.get(tblBids.BIDDER_ID));
 					String bidderName = rs.getString(map_Bids.get(tblBids.BIDDER_NAME));
 					long placed = rs.getLong(map_Bids.get(tblBids.DTG_PLACED));
 					double price = rs.getDouble(map_Bids.get(tblBids.PRICE));
@@ -670,7 +707,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				map_Offers.get(tblOffers.TRANS_ID) + " = ?;";
 		try {
 			st = con.prepareStatement(sql);
-			st.setString(1, marketTables.get(type));
+			st.setString(1, type.toString());
 			st.setInt(2, id);
 			ResultSet rs = executeSELECT(st);
 			if (!rs.isBeforeFirst()) return list;
@@ -679,7 +716,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					int offerID = rs.getInt(map_Offers.get(tblOffers.ID));
 					String marketName = rs.getString(map_Offers.get(tblOffers.MARKET_NAME));
 					String stack = rs.getString(map_Offers.get(tblOffers.ITEM));
-					UUID offerer = UUID.fromString(rs.getString(map_Offers.get(tblOffers.OFFERER)));
+					UUID offerer = (UUID) rs.getObject(map_Offers.get(tblOffers.OFFERER));
 					String offererName = rs.getString(map_Offers.get(tblOffers.OFFERER_NAME));
 					long placed = rs.getLong(map_Offers.get(tblOffers.DTG_PLACED));
 					int requested = rs.getInt(map_Offers.get(tblOffers.REQUESTED_AMOUNT));
@@ -692,99 +729,20 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 		} catch(SQLException e) {e.printStackTrace();}
 		return list;
 	}
-
-	@Override
-	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
-		List<IMarketEntry> list = new ArrayList<IMarketEntry>();
-		PreparedStatement st = null;
-		String sql = "SELECT * FROM " + marketTables.get(type) + " WHERE " +
-				map_Markets.get(tblMarkets.ITEM) + " LIKE \"*\" & ? & \"*\" AND (" +
-				map_Markets.get(tblMarkets.VENDOR_NAME) + " =? OR " +
-				map_Markets.get(tblMarkets.LOCALITY) + " =?) AND (" +
-				map_Markets.get(tblMarkets.PRICE) + " BETWEEN ? AND ?) AND " +
-				map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM) + " =? AND " +
-				" ORDER BY " + map_Markets.get(tblMarkets.DTG_CLOSED) + " DESC " +
-				(rowCount == -1 ? "" : "LIMIT ?") +
-				"OFFSET ?;";
-		try {
-			st = con.prepareStatement(sql);
-			int f = 1;
-			st.setString(f, filters.getOrDefault(FilterType.NAME, ""));
-			st.setString(f++, filters.getOrDefault(FilterType.SOURCE, ""));
-			st.setString(f++, filters.getOrDefault(FilterType.SOURCE, ""));
-			st.setDouble(f++, Double.valueOf(filters.getOrDefault(FilterType.PRICE_FROM, "0")));
-			st.setDouble(f++, Double.valueOf(filters.getOrDefault(FilterType.PRICE_FROM, String.valueOf(Double.MAX_VALUE))));
-			st.setBoolean(f++, Boolean.valueOf(filters.getOrDefault(FilterType.IS_OFFER, String.valueOf(true))));
-			if (rowCount >= 0) st.setInt(f++, rowCount);
-			st.setInt(f++, indexStart);
-			ResultSet rs = executeSELECT(st);
-			if (!rs.isBeforeFirst()) return list;
-			while (rs.next()) {
-				int transID = rs.getInt(map_Markets.get(tblMarkets.ID));
-				String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
-				double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
-				boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-				UUID buyer = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.BUYER_ID)));
-				String buyerName = rs.getString(map_Markets.get(tblMarkets.BUYER_NAME));
-				long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
-				long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
-				switch (type) {
-				case LOCAL: {
-					UUID locality = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.LOCALITY)));
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
-					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
-					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
-					int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
-					EntryLocal newEntry = new EntryLocal(transID, stack, vendorName, buyerName, vendor, buyer, locality,
-							price, giveItem, active, originalStock, placed, closed);
-					list.add(newEntry);
-					break;
-				}
-				case GLOBAL: {
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
-					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
-					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
-					int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
-					EntryGlobal newEntry = new EntryGlobal(transID, stack, vendorName, buyerName, vendor, buyer, price,
-							giveItem, active, originalStock, placed, closed);
-					list.add(newEntry);
-					break;
-				}
-				case AUCTION: {
-					UUID vendor = UUID.fromString(rs.getString(map_Markets.get(tblMarkets.VENDOR_ID)));
-					String vendorName = rs.getString(map_Markets.get(tblMarkets.VENDOR_NAME));
-					long bidEnd = rs.getLong(map_Markets.get(tblMarkets.BID_END));
-					EntryAuction newEntry = new EntryAuction(transID, stack, vendorName, buyerName, vendor, buyer, bidEnd, placed, closed, price, active);
-					list.add(newEntry);
-					break;
-				}
-				case SERVER: {
-					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
-					int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
-					EntryServer newEntry = new EntryServer(transID, stack, buyerName, buyer, price, giveItem, active,
-							originalStock, placed, closed);
-					list.add(newEntry);
-					break;
-				}
-				default: }
-			}
- 		} catch(SQLException e) {e.printStackTrace();}
-		return list;
-	}
 	
 	private static Map<tblMarkets, String> define_Markets() {
 		Map<tblMarkets, String> map = new HashMap<tblMarkets, String>();
 		map.put(tblMarkets.ID, "ID");
-		map.put(tblMarkets.ITEM, "Item");
-		map.put(tblMarkets.VENDOR_ID, "Vendor");
+		map.put(tblMarkets.ITEM, "ITEM");
+		map.put(tblMarkets.VENDOR_ID, "VENDOR");
 		map.put(tblMarkets.VENDOR_NAME, "VENDOR_NAME");
-		map.put(tblMarkets.LOCALITY, "locality");
-		map.put(tblMarkets.BID_END, "bid_end");
-		map.put(tblMarkets.PRICE, "Price");
-		map.put(tblMarkets.VENDOR_GIVE_ITEM, "GiveItem");
-		map.put(tblMarkets.STOCK, "Stock");
-		map.put(tblMarkets.ACTIVE_TRANSACTION, "active");
-		map.put(tblMarkets.BUYER_ID, "buyer");
+		map.put(tblMarkets.LOCALITY, "LOCALITY");
+		map.put(tblMarkets.BID_END, "BID_END");
+		map.put(tblMarkets.PRICE, "PRICE");
+		map.put(tblMarkets.VENDOR_GIVE_ITEM, "GIVE_ITEM");
+		map.put(tblMarkets.STOCK, "STOCK");
+		map.put(tblMarkets.ACTIVE_TRANSACTION, "ACTIVE");
+		map.put(tblMarkets.BUYER_ID, "BUYER");
 		map.put(tblMarkets.BUYER_NAME, "BUYER_NAME");
 		map.put(tblMarkets.DTG_PLACED, "DTG_PLACED");
 		map.put(tblMarkets.DTG_CLOSED, "DTG_CLOSED");
@@ -793,29 +751,29 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	
 	private static Map<tblBids, String> define_Bids() {
 		Map<tblBids, String> map = new HashMap<tblBids, String>();
-		map.put(tblBids.TABLE_NAME, "tbl_bids_");
+		map.put(tblBids.TABLE_NAME, "TBL_BIDS");
 		map.put(tblBids.ID, "ID");
-		map.put(tblBids.TRANSACTION_ID, "trans_ID");
-		map.put(tblBids.BIDDER_ID, "bidder");
+		map.put(tblBids.TRANSACTION_ID, "TRANS_ID");
+		map.put(tblBids.BIDDER_ID, "BIDDER");
 		map.put(tblBids.BIDDER_NAME, "BIDDER_NAME");
 		map.put(tblBids.DTG_PLACED, "DTG");
-		map.put(tblBids.PRICE, "Price");
+		map.put(tblBids.PRICE, "PRICE");
 		return map;
 	}
 	
 	private static Map<tblStorage, String> define_Storage() {
 		Map<tblStorage, String> map = new HashMap<tblStorage, String>();
-		map.put(tblStorage.TABLE_NAME, "tbl_storage_");
+		map.put(tblStorage.TABLE_NAME, "TBL_STORAGE");
 		map.put(tblStorage.ID, "ID");
-		map.put(tblStorage.OWNER, "Owner");
-		map.put(tblStorage.ITEM, "Item");
-		map.put(tblStorage.QUANTITY, "Count");
+		map.put(tblStorage.OWNER, "OWNER");
+		map.put(tblStorage.ITEM, "ITEM");
+		map.put(tblStorage.QUANTITY, "COUNT");
 		return map;
 	}
 	
 	private static Map<tblOffers, String> define_Offers() {
 		Map<tblOffers, String> map = new HashMap<tblOffers, String>();
-		map.put(tblOffers.TABLE_NAME, "TBL_OFFERS_");
+		map.put(tblOffers.TABLE_NAME, "TBL_OFFERS");
 		map.put(tblOffers.ID, "ID");
 		map.put(tblOffers.MARKET_NAME, "MARKET_NAME");
 		map.put(tblOffers.TRANS_ID, "TRANS_ID");

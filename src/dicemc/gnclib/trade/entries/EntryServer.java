@@ -30,7 +30,7 @@ public class EntryServer  implements IBufferable, IMarketEntry{
 		this.dateClosed = dateClosed;
 	}
 	public EntryServer(String itemStack, double price, boolean giveItem, int stock) {
-		this(-1, itemStack, null, null, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
+		this(-1, itemStack, "", ComVars.NIL, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
 	}
 
 	@Override

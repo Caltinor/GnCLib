@@ -9,8 +9,8 @@ import dicemc.testapp.impl.RealEstateImpl;
 
 public class GnCLibConsole {
 	public static UUID id = UUID.randomUUID();
-	public static UUID testPlayer = UUID.fromString("12d9481c-280f-4b70-b93c-c82934cd8c13");
-	public static String testPlayerName = "Caltinor";
+	public static String testPlayerName = "Verazor";
+	public static UUID testPlayer;	
 	
 	public static void main(String []args) {
 		Map<String, RealEstateImpl> wMgr = new HashMap<String, RealEstateImpl>();
@@ -19,6 +19,8 @@ public class GnCLibConsole {
 		wMgr.put("End", new RealEstateImpl());
 		ConfigSrc.init();
 		RunVars.init();
+		testPlayer = RunVars.getPlayerByName(testPlayerName);
+		System.out.println("Test Player Set as: " + testPlayerName);
 		Menu.main();
 	}
 	

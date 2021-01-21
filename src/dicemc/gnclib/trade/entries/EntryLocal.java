@@ -3,6 +3,7 @@ package dicemc.gnclib.trade.entries;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
 
@@ -32,7 +33,7 @@ public class EntryLocal  implements IBufferable, IMarketEntry{
 		this.dateClosed = dateClosed;
 	}
 	public EntryLocal(UUID locality, UUID vendor, String vendorName, String itemStack, int stock, double price, boolean giveItem) {
-		this(-1, itemStack, vendorName, null, vendor, null, locality, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
+		this(-1, itemStack, vendorName, "", vendor, ComVars.NIL, locality, price, giveItem, true, stock, System.currentTimeMillis(), 0L);
 	}
 	
 	@Override

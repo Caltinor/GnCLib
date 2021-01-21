@@ -7,14 +7,16 @@ import java.util.Map;
 
 public class Translation {
 	private String output;
+	private String key;
 	public static Map<String, String> translationMap = readFromFile();
 
 	public Translation(String key) {
+		this.key = key;
 		output = translationMap.get(key);
 	}
 	
 	public String print() {
-		return output;
+		return (output == null ? key : output);
 	}
 	
 	private static Map<String, String> readFromFile() {

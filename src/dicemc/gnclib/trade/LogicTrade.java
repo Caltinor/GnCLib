@@ -61,15 +61,14 @@ public class LogicTrade implements IDBImplTrade{
 	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
 		switch (type) {
 		case LOCAL: {
-			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");
-			
+			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");			
 			break;
 		}
 		case GLOBAL: {
 			if (!(entry instanceof EntryGlobal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");
 			double pBal = LogicMoney.getBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl);
 			double tax = entry.getPrice()*Marketplaces.get(type).sellFee;
-			double fee = (entry.getGiveItem() ? tax : (tax + entry.getPrice()));
+			double fee = (entry.getGiveItem() ? tax * entry.getStock() : (tax + entry.getPrice()) * entry.getStock());
 			if (pBal < fee) {return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.funds");}
 			else {LogicMoney.changeBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, -(fee));}
 			break;
@@ -122,6 +121,11 @@ public class LogicTrade implements IDBImplTrade{
 		 * - transfer highest bid funds to the seller
 		 */
 		List<EntryBid> bidlist = getBidList(entry.getID());
+		if (bidlist.size() == 0) {
+			EntryStorage sto = new EntryStorage(entry.vendor, entry.stack, 1);
+			addToStorage(sto);
+			return service.expireBid(entry);
+		}
 		EntryBid highestBid = bidlist.get(bidlist.size()-1);
 		LogicMoney.changeBalance(entry.vendor, LogicMoney.AccountType.PLAYER.rl, highestBid.value);
 		return service.expireBid(entry);
@@ -131,13 +135,12 @@ public class LogicTrade implements IDBImplTrade{
 	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, UUID buyer, String buyerName, int count) {
 		if (type.equals(MarketType.AUCTION)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failue.type");
 		if (entry.getStock() < count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.count");
-		if (Marketplaces.get(type).buyFee > 0) {
-			double fee = entry.getPrice() * Marketplaces.get(type).buyFee * count;
-			double cost = entry.getGiveItem() ? entry.getPrice() * count : 0d;
-			double balP = LogicMoney.getBalance(buyer, LogicMoney.AccountType.PLAYER.rl);
-			if (balP < (cost + fee)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.fund");
-			LogicMoney.transferFunds(buyer, LogicMoney.AccountType.PLAYER.rl, entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, entry.getPrice());
-		}
+		double fee = entry.getPrice() * Marketplaces.get(type).buyFee * count;
+		double cost = entry.getGiveItem() ? entry.getPrice() * count : 0d;
+		double balP = LogicMoney.getBalance(buyer, LogicMoney.AccountType.PLAYER.rl);
+		if (balP < (cost + fee)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.fund");
+		LogicMoney.transferFunds(buyer, LogicMoney.AccountType.PLAYER.rl, entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, cost);
+		LogicMoney.changeBalance(buyer, LogicMoney.AccountType.PLAYER.rl, -fee);
 		return service.executeTransaction(entry, type, buyer, buyerName, count);
 	}
 
@@ -166,15 +169,23 @@ public class LogicTrade implements IDBImplTrade{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> placeBid(EntryBid bid) {
+	public TranslatableResult<TradeResult> placeBid(EntryBid bid, double itemValue) {
 		List<EntryBid> bidList = service.getBidList(bid.getTransactionID());
-		EntryBid highestBid = bidList.get(bidList.size()-1);
-		if (highestBid.value >= bid.value) {return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.toolow");} 
+		boolean firstBid = true;
+		EntryBid highestBid = null;
+		if (bidList.size() > 0) {
+			firstBid = false;
+			highestBid = bidList.get(bidList.size()-1);
+			if (highestBid.value >= bid.value) {return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.toolow");}
+		}
+		else { 
+			if (itemValue >= bid.value) {return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.toolow");}
+		}
 		double pBal = LogicMoney.getBalance(bid.bidder, LogicMoney.AccountType.PLAYER.rl);
 		if (pBal < bid.value) {return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.fund");}
 		LogicMoney.changeBalance(bid.bidder, LogicMoney.AccountType.PLAYER.rl, -(bid.value));
-		LogicMoney.changeBalance(highestBid.bidder, LogicMoney.AccountType.PLAYER.rl, highestBid.value);
-		return service.placeBid(bid);
+		if (!firstBid) LogicMoney.changeBalance(highestBid.bidder, LogicMoney.AccountType.PLAYER.rl, highestBid.value);
+		return service.placeBid(bid, itemValue);
 	}
 
 	@Override
@@ -201,8 +212,8 @@ public class LogicTrade implements IDBImplTrade{
 	}
 
 	@Override
-	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
-		return service.getMarketList(type, indexStart, rowCount, filters);
+	public List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters, boolean isHistory) {
+		return service.getMarketList(type, indexStart, rowCount, filters, isHistory);
 	}
 
 	@Override
@@ -219,10 +230,4 @@ public class LogicTrade implements IDBImplTrade{
 	public List<EntryOffer> getOfferList(int id, MarketType type) {
 		return service.getOfferList(id, type);
 	}
-
-	@Override
-	public List<IMarketEntry> getTransactionHistory(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters) {
-		return service.getTransactionHistory(type, indexStart, rowCount, filters);
-	}
-	
 }
