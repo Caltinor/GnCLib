@@ -8,6 +8,8 @@ import java.util.Map;
 public interface IDatabase {
 	Map<String, String> defineTables();
 	
+	public void printAllTables();
+	
 	default ResultSet executeSELECT(PreparedStatement sql) {
 		try {return sql.executeQuery(); } catch (SQLException e) {e.printStackTrace();}
 		return null;

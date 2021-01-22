@@ -47,6 +47,25 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		map.put(tbl, sql);
 		return map;
 	}
+	
+	@Override
+	public void printAllTables() {
+		PreparedStatement st = null;
+		String sql = "SELECT * FROM " +map_Money.get(tblMoney.TABLE_NAME);
+		System.out.println("==========="+map_Money.get(tblMoney.TABLE_NAME)+"===========");
+		try {
+			st = con.prepareStatement(sql);
+			ResultSet rs = executeSELECT(st);
+			int cc = rs.getMetaData().getColumnCount();				
+			while (rs.next()) {
+				String output = "";
+				for (int i = 1; i <= cc; i++) {
+					output += rs.getMetaData().getColumnName(i)+":"+rs.getString(i) + ", ";
+				}
+				System.out.println(output);
+			}
+		} catch(SQLException e) {e.printStackTrace();}
+	}
 
 	@Override
 	public double getBalance(UUID owner, String ownerType) {

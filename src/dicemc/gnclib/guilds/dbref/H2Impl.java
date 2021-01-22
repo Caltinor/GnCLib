@@ -33,6 +33,12 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 		map.put(tbl, sql);
 		return map;
 	}
+	
+	@Override
+	public void printAllTables() {
+		// TODO Auto-generated method stub
+		
+	}
 
 	@Override
 	public Map<UUID, Guild> getAllGuilds() {
