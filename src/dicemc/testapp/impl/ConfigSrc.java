@@ -15,6 +15,7 @@ public class ConfigSrc {
 				"sa", 							//user
 				"");							//password
 		ConfigCore.defineGuildConfigValues(
+				"test World 1", //worldName,
 				0.1, 		//globalTaxRate, 
 				864000L,	//globalTaxInterval, 
 				2500d, 		//guildCreateCost, 
@@ -41,7 +42,7 @@ public class ConfigSrc {
 				0.1, 			//globalTaxBuy, 
 				0.1, 			//globalTaxSell, 
 				0.3,			//auctionTaxSell, 
-				600000L,		//auctionOpenDuration
+				259200000L,		//auctionOpenDuration
 				25);			//pageSize
 	}
 }

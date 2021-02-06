@@ -9,7 +9,7 @@ import dicemc.testapp.impl.RealEstateImpl;
 
 public class GnCLibConsole {
 	public static UUID id = UUID.randomUUID();
-	public static String testPlayerName = "Verazor";
+	public static String testPlayerName = "Madood";
 	public static UUID testPlayer;	
 	
 	public static void main(String []args) {

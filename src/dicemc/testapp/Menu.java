@@ -1,13 +1,16 @@
 package dicemc.testapp;
 
 import java.sql.Timestamp;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
 
+import dicemc.gnclib.guilds.LogicGuilds;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.trade.LogicTrade;
 import dicemc.gnclib.trade.dbref.IDBImplTrade;
@@ -19,12 +22,18 @@ import dicemc.gnclib.trade.entries.EntryGlobal;
 import dicemc.gnclib.trade.entries.EntryLocal;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryServer;
+import dicemc.gnclib.trade.entries.EntryStorage;
 import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.ComVars;
 
 public class Menu {
 	private static final Scanner input = new Scanner(System.in);	
 	private static List<IMarketEntry> marketList;
+	private static List<EntryOffer> offers= new ArrayList<EntryOffer>();
+	private static Map<FilterType, String> filters = new HashMap<FilterType, String>();
+	private static int rowIndex, rowCount;
+	private static DecimalFormat df = new DecimalFormat("###,###,###,##0.00");
+	private static UUID locality = UUID.randomUUID();
 
 	public static void main() {
 		boolean looping = true;
@@ -46,7 +55,8 @@ public class Menu {
 	}
 	
 	private static void landMain() {
-		System.out.println("Land Menu");
+		locality = UUID.randomUUID();
+		System.out.println("locality changed to new random");
 	}
 	
 	private static void marketMain() {
@@ -59,9 +69,11 @@ public class Menu {
 			System.out.println("3. AUCTION");
 			System.out.println("4. SERVER");
 			System.out.println("5. PERSONAL");
+			System.out.println("6. Print Tables");
 			int selection = input.nextInt();
 			if (selection==0) {looping = false;}
 			else if (selection==5) {marketPersonalActions();}
+			else if (selection==6) {LogicTrade.get().printTables();}
 			else {marketActions(IDBImplTrade.MarketType.values()[selection-1]);	}
 		}
 	}
@@ -77,6 +89,7 @@ public class Menu {
 			System.out.println("4. view History");
 			System.out.println("5. submit offer/bid");
 			System.out.println("6. Detail View");
+			System.out.println("7. Accept offer");
 			int selection = input.nextInt();
 			if (selection == 0) {return;}
 			switch (selection) {
@@ -86,6 +99,7 @@ public class Menu {
 			case 4: {marketActionViewListings(market, true); break;}
 			case 5: {if (!market.equals(IDBImplTrade.MarketType.SERVER)) marketActionSubmitOffer(market); break;}
 			case 6: {marketActionViewDetail(market); break;}
+			case 7: {marketActionAcceptOffer(market); break;}
 			default: return;}
 		}
 	}
@@ -93,7 +107,6 @@ public class Menu {
 	private static void marketPersonalActions() {
 		boolean looping = true;
 		while (looping) {
-			Map<FilterType, String> filters = new HashMap<FilterType, String>();
 			System.out.println("Please select an action: ");
 			System.out.println("0. Return");
 			System.out.println("1. View sales");
@@ -101,15 +114,11 @@ public class Menu {
 			System.out.println("3. view History");
 			System.out.println("4. view my offers");
 			System.out.println("5. change transaction supply");
+			System.out.println("6. remove item from storage");
 			int selection = input.nextInt();
 			switch (selection) {
 			case 1: {
-				List<IMarketEntry> list = new ArrayList<IMarketEntry>();
-				filters.put(FilterType.SOURCE_VENDOR, GnCLibConsole.testPlayer.toString());
-				list.addAll(LogicTrade.get().getMarketList(MarketType.LOCAL, 0, -1, filters, false));
-				list.addAll(LogicTrade.get().getMarketList(MarketType.GLOBAL, 0, -1, filters, false));
-				list.addAll(LogicTrade.get().getMarketList(MarketType.AUCTION, 0, -1, filters, false));
-				marketList = list;
+				marketList = getAllMarketItems(GnCLibConsole.testPlayer, false);
 				for (int i = 0; i < marketList.size(); i++) {
 					String itemLine = i + marketList.get(i).getClass().getSimpleName()+":"+marketList.get(i).getID()+ " " + marketList.get(i).getStack() +
 							(marketList.get(i).getGiveItem() ? " Offered for $" : " Requested for $") +
@@ -123,12 +132,47 @@ public class Menu {
 				continue;
 			}
 			case 2: {
+				input.nextLine();
+				System.out.println("Input Index");
+				int index = input.nextInt();
+				System.out.println("Input Row Count");
+				int count = input.nextInt();
+				List<EntryStorage> list = LogicTrade.get().getStorageList(index, count, GnCLibConsole.testPlayer);
+				System.out.println("============PLAYER STORAGE================");
+				for (int i = 0; i < list.size(); i++) {
+					String itemLine = "ID:"+list.get(i).getID()+" Item: " + list.get(i).stack + " Count: " + list.get(i).count;
+					System.out.println(itemLine);
+				}
+				System.out.println("==========================================");
 				continue;
 			}
 			case 3: {
+				marketList = getAllMarketItems(GnCLibConsole.testPlayer, true);
+				for (int i = 0; i < marketList.size(); i++) {
+					String itemLine = i + marketList.get(i).getClass().getSimpleName()+":"+marketList.get(i).getID()+ " " + marketList.get(i).getStack() +
+							(marketList.get(i).getGiveItem() ? " Offered for $" : " Requested for $") +
+							marketList.get(i).getPrice() + " by:" + marketList.get(i).getVendorName() +
+							" " + (marketList.get(i).getStock() >= 0 ? marketList.get(i).getStock() : "Unlimited") + " Supply " + 
+							(marketList.get(i) instanceof EntryLocal ? "\n available at " + marketList.get(i).getLocality() : "") +
+							(marketList.get(i) instanceof EntryAuction ? "\n Until:" + new Timestamp(marketList.get(i).getBidEnd()) : "") +
+							" Placed on:" + new Timestamp(marketList.get(i).getDTGPlaced());
+					System.out.println(itemLine);
+				}
 				continue;
 			}
 			case 4: {
+				List<IMarketEntry> myItems = getAllMarketItems(GnCLibConsole.testPlayer, false);
+				for (int i = 0; i < myItems.size(); i++) {
+					if (!myItems.get(i).getGiveItem()) continue;
+					if (myItems.get(i) instanceof EntryAuction) continue;
+					MarketType type = (myItems.get(i) instanceof EntryLocal ? MarketType.LOCAL : MarketType.GLOBAL);
+					System.out.println("On Market: "+type.toString());
+					System.out.println("=====OFFERS========");
+					LogicTrade.get().getOfferList(myItems.get(i).getID(), type).forEach(e -> {
+						System.out.println(e.stack+" offered:"+e.offeredAmount+" for:"+e.requestedAmount+" by:"+e.offererName);
+					});;
+					System.out.println("===================");
+				}
 				continue;
 			}
 			case 5: {
@@ -143,40 +187,71 @@ public class Menu {
 				else if (entry instanceof EntryGlobal) market = MarketType.GLOBAL;
 				else if (entry instanceof EntryAuction) market = MarketType.AUCTION;
 				else if (entry instanceof EntryServer) market = MarketType.SERVER;
-				LogicTrade.get().changeTransactionSupply(market, entry, newSupply);
+				System.out.println(new Translation(
+						LogicTrade.get().changeTransactionSupply(market, entry, newSupply)
+						.translationKey)
+						.print());
+				continue;
+			}
+			case 6: {
+				input.nextLine();
+				System.out.println("Enter item ID");
+				int id = input.nextInt();
+				System.out.println("Enter quantity being removed");
+				int count = input.nextInt();
+				EntryStorage entry = new EntryStorage(id, GnCLibConsole.testPlayer, "", count);
+				System.out.println(new Translation(
+						LogicTrade.get().pullFromStorage(entry, count)
+						.translationKey)
+						.print());
 				continue;
 			}
 			default: looping=false;}
 		}
 	}
 	
+	private static List<IMarketEntry> getAllMarketItems(UUID player, boolean isHistory) {
+		List<IMarketEntry> list = new ArrayList<IMarketEntry>();
+		Map<FilterType, String> xfilters = Collections.singletonMap(FilterType.SOURCE_VENDOR, player.toString());
+		list.addAll(LogicTrade.get().getMarketList(MarketType.LOCAL, 0, -1, xfilters, isHistory));
+		list.addAll(LogicTrade.get().getMarketList(MarketType.GLOBAL, 0, -1, xfilters, isHistory));
+		list.addAll(LogicTrade.get().getMarketList(MarketType.AUCTION, 0, -1, xfilters, isHistory));
+		return list;
+	}
+	
 	private static void marketActionViewListings(IDBImplTrade.MarketType market, boolean isHistory) {
+		filters = new HashMap<FilterType, String>();
 		input.nextLine();
 		Map<FilterType, String> filters = new HashMap<FilterType, String>();
 		System.out.println("Please enter your filter preferences:");
-		System.out.println("Vendor Filter: ");
-		String in = input.nextLine();
-		if (in.length()>0) filters.put(FilterType.SOURCE_VENDOR, in);
-		System.out.println("Locality Filter: ");
-		in = input.nextLine();
-		if (in.length()>0) filters.put(FilterType.SOURCE_LOCALITY, in);
-		System.out.println("Price Minimum Filter: ");
-		in = input.nextLine();
-		if (in.length()>0) filters.put(FilterType.PRICE_FROM, in);
-		System.out.println("Price Maximum Filter: ");
-		in = input.nextLine();
-		if (in.length()>0) filters.put(FilterType.PRICE_TO, in);
 		System.out.println("(1)requests or (2)offers: ");
 		int x = input.nextInt();
 		filters.put(FilterType.IS_OFFER, (x==1 ? "false": "true"));
-		System.out.println("enter row start: ");
-		int rowIndex = input.nextInt();
 		System.out.println("enter row count: ");
-		int rowCount = input.nextInt();
+		rowCount = input.nextInt();
+		System.out.println("enter row start: ");
+		rowIndex = input.nextInt() * rowCount;		
+		System.out.println("(1)filter or (2)all: ");
+		x = input.nextInt();
+		if (x == 1) {
+			input.nextLine();
+			System.out.println("Vendor Filter: ");
+			String in = input.nextLine();
+			if (in.length()>0) filters.put(FilterType.SOURCE_VENDOR, in);
+			System.out.println("Locality Filter: ");
+			in = input.nextLine();
+			if (in.length()>0) filters.put(FilterType.SOURCE_LOCALITY, in);
+			System.out.println("Price Minimum Filter: ");
+			in = input.nextLine();
+			if (in.length()>0) filters.put(FilterType.PRICE_FROM, in);
+			System.out.println("Price Maximum Filter: ");
+			in = input.nextLine();
+			if (in.length()>0) filters.put(FilterType.PRICE_TO, in);			
+		}
 		//sort preferences
 		System.out.println("Sort by price 1.no 2.ASC 3.DESC");
 		int priceOrder = input.nextInt();
-		in = (priceOrder==2 ? "ASC" : "DESC");
+		String in = (priceOrder==2 ? "ASC" : "DESC");
 		if (priceOrder >= 2) filters.put(FilterType.ORDER_PRICE, in);
 		System.out.println("include my sales 1.yes 2.no");
 		int includeOwnSales = input.nextInt();
@@ -197,7 +272,7 @@ public class Menu {
 					(market.equals(MarketType.AUCTION) ? highestBids.get(i) : marketList.get(i).getPrice()) +
 					" by:" + marketList.get(i).getVendorName() +
 					" " + (marketList.get(i).getStock() >= 0 ? marketList.get(i).getStock() : "Unlimited") + " Supply " + 
-					(marketList.get(i) instanceof EntryLocal ? "\n available at " + marketList.get(i).getLocality() : "") +
+					(marketList.get(i) instanceof EntryLocal ? "\n available at " + LogicGuilds.getGuildByID(marketList.get(i).getLocality()).name : "") +
 					(marketList.get(i) instanceof EntryAuction ? "\n Until:" + new Timestamp(marketList.get(i).getBidEnd()) : "") +
 					" Placed on:" + new Timestamp(marketList.get(i).getDTGPlaced()) +
 					(isHistory ? "\n Purchased by: "+marketList.get(i).getBuyerName()+ " on:" + new Timestamp(marketList.get(i).getDTGClosed()) : "");
@@ -222,7 +297,7 @@ public class Menu {
 		input.nextLine();
 		switch (market) {
 		case LOCAL: {
-			EntryLocal entry = new EntryLocal(UUID.randomUUID(), GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName,
+			EntryLocal entry = new EntryLocal(locality, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName,
 					stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
@@ -257,6 +332,7 @@ public class Menu {
 		System.out.println(new Translation(
 				LogicTrade.get().executeTransaction(entry, market, buyer, buyerName, quant)
 					.translationKey).print());
+		marketList = LogicTrade.get().getMarketList(market, rowIndex, rowCount, filters, false);
 	}
 	private static void marketActionSubmitOffer(IDBImplTrade.MarketType market) {
 		input.nextLine();
@@ -272,18 +348,76 @@ public class Menu {
 						.print());
 		}
 		else {
+			input.nextLine();
 			System.out.println("Enter your ItemStack Name:");
 			String stack = input.nextLine();
 			System.out.println("Enter requested amount: ");
 			int requested = input.nextInt();
 			System.out.println("Enter offerred amount: ");
 			int offered = input.nextInt();
-			EntryOffer offer = new EntryOffer(marketList.get(id).getID(), market.toString(), stack, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, requested, offered);
+			EntryOffer offer = new EntryOffer(marketList.get(id).getID(), LogicTrade.get().getMarketName(market), stack, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, requested, offered);
 			System.out.println(new Translation(
 					LogicTrade.get().submitOffer(marketList.get(id), offer).translationKey).print());
 		}
 	}
-	private static void marketActionViewDetail(IDBImplTrade.MarketType market) {}
+	private static void marketActionViewDetail(IDBImplTrade.MarketType market) {
+		
+		input.nextLine();
+		System.out.println("Enter item number: ");
+		int id = input.nextInt();
+		IMarketEntry entry = marketList.get(id);
+		if (entry.getGiveItem() && !market.equals(MarketType.AUCTION)) {
+			System.out.println("Get offers");
+			offers = LogicTrade.get().getOfferList(entry.getID(), market);
+			System.out.println(offers.size());
+		}
+		double price = entry.getPrice();
+		List<EntryBid> bids = new ArrayList<EntryBid>();
+		if (market.equals(MarketType.AUCTION)) {
+			bids = LogicTrade.get().getBidList(entry.getID());
+			price = (bids.size()==0 ? entry.getPrice() : bids.get(bids.size()-1).value); 
+		}
+		
+		System.out.println("===========DETAIL VIEW================");
+		System.out.println(entry.getGiveItem() ? "OFFERING:" : "REQUESTING");
+		System.out.println("Item  : "+ entry.getStack());
+		System.out.println(" supply="+ entry.getStock());
+		System.out.println("for   :$"+ df.format(price));
+		System.out.println("Vendor: "+ entry.getVendorName() +"["+entry.getVendorID().toString()+"]");				
+		System.out.println("Placed on: "+ new Timestamp(entry.getDTGPlaced()));
+		if (market.equals(MarketType.AUCTION)) System.out.println("Bidding Ends on: "+ new Timestamp(entry.getBidEnd()));
+		if (market.equals(MarketType.LOCAL)) System.out.println("Available at: "+LogicGuilds.getGuildByID(entry.getLocality()).name);
+		System.out.println("======================================");
+		if (!market.equals(MarketType.AUCTION)) {
+			System.out.println("---------------OFFERS-----------------");
+			for (int i = 0; i < offers.size(); i++) {
+				EntryOffer o = offers.get(i);
+				System.out.println("["+i+"] "+o.offererName+" offers");
+				System.out.println(" Item: "+o.stack);
+				System.out.println("Give:For  "+o.offeredAmount+":"+o.requestedAmount);
+				System.out.println("_______________________________________");
+			}
+		}
+		else {
+			System.out.println("---------------BIDS-----------------");
+			for (int i = 0; i < bids.size(); i++) {
+				EntryBid b = bids.get(i);
+				System.out.println(b.bidderName+" bid $"+df.format(b.value)+" on "+new Timestamp(b.placedDate));
+				System.out.println("_______________________________________");
+			}
+		}
+	}
+	private static void marketActionAcceptOffer(IDBImplTrade.MarketType market) {
+		input.nextLine();
+		System.out.println("Input item index");
+		int iIndex = input.nextInt();
+		System.out.println("Input offer index");
+		int oIndex = input.nextInt();
+		System.out.println(new Translation(
+				LogicTrade.get().acceptOffer(marketList.get(iIndex), market, offers.get(oIndex))
+				.translationKey)
+				.print());
+	}
 	
 	private static void guildMain() {
 		System.out.println("Guild Menu");
@@ -298,6 +432,7 @@ public class Menu {
 			System.out.println("2. set balance of testPlayer");
 			System.out.println("3. change balance of testPlayer");
 			System.out.println("4. transfer funds");
+			System.out.println("5. Print Table");
 			System.out.println("0. Back");
 			int selection = input.nextInt();
 			if (selection == 1) {
@@ -340,6 +475,10 @@ public class Menu {
 						continue;
 					}
 				}
+			}
+			else if (selection == 5) {
+				LogicMoney.printTable();
+				continue;
 			}
 			else return;
 		}
