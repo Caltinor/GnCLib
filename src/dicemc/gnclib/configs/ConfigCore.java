@@ -3,6 +3,7 @@ package dicemc.gnclib.configs;
 import java.util.ArrayList;
 import java.util.List;
 
+import dicemc.gnclib.guilds.LogicGuilds;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.trade.LogicTrade;
 
@@ -90,12 +91,13 @@ public class ConfigCore {
 		return "Money Values uploaded to Lib Variables";
 	}
 	
-	public static String defineGuildConfigValues(double globalTaxRate, long globalTaxInterval, double guildCreateCost, double guildNameChangeCost, double guildRankAddCost) {
+	public static String defineGuildConfigValues(String worldName, double globalTaxRate, long globalTaxInterval, double guildCreateCost, double guildNameChangeCost, double guildRankAddCost) {
 		GLOBAL_TAX_RATE = globalTaxRate;
 		GLOBAL_TAX_INTERVAL = globalTaxInterval;
 		GUILD_CREATE_COST = guildCreateCost;
 		GUILD_NAME_CHANGE_COST = guildNameChangeCost;
 		GUILD_RANK_ADD_COST = guildRankAddCost;
+		LogicGuilds.init(worldName);
 		return "Guild Values uploaded to Lib Variables";
 	}
 	

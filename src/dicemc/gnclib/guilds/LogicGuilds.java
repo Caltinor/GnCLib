@@ -13,6 +13,7 @@ import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ComVars;
+import dicemc.gnclib.util.Duo;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class LogicGuilds {
@@ -40,7 +41,7 @@ public class LogicGuilds {
 	private static Map<UUID, Guild> GUILDS = new HashMap<UUID, Guild>();
 	//GuildID, playerid, memberData
 	private static Map<UUID, Map<UUID, Integer>> MEMBERS = new HashMap<UUID, Map<UUID, Integer>>();
-	//RankID, rankData
+	//GuildID, ranksequence, rankTitle
 	private static Map<UUID, Map<Integer, String>> RANKS = new HashMap<UUID, Map<Integer, String>>();
 	//GuildID<PermKey<list of permitted classifications>>
 	private static Map<UUID, Map<PermKey, List<RankPerms>>> PERMS = new HashMap<UUID, Map<PermKey, List<RankPerms>>>();
@@ -144,6 +145,9 @@ public class LogicGuilds {
 	
 	public static TranslatableResult<GuildResult> removeGuild(UUID guildID) {
 		getGuilds().remove(guildID);
+		MEMBERS.remove(guildID);
+		RANKS.remove(guildID);
+		PERMS.remove(guildID);
 		return service.removeGuild(guildID);
 	}
 	
@@ -227,4 +231,74 @@ public class LogicGuilds {
 		}
     	return sequence;
     }
+	
+	public static int getMemberCount(UUID guildID) {
+		int count = 0;
+		for (Map.Entry<UUID, Integer> mbrs : MEMBERS.get(guildID).entrySet()) {
+			if (mbrs.getValue() >= 0) count++;
+		}
+		return count;
+	}
+	
+	public static void applyTaxes(Map<UUID, Duo<Integer, Double>> chunkCounts) {
+		//TODO change return type to allow for a stream of messages that can be sent to appropriate entities
+		for (Map.Entry<UUID, Map<UUID, Integer>> mbrs : MEMBERS.entrySet()) {
+			Guild guild = GUILDS.get(mbrs.getKey());
+			if (guild.tax == 0) continue;
+			boolean isDividends = guild.tax < 0;			
+			int mbrCount = mbrs.getValue().size();
+			double taxedSrc = isDividends ? LogicMoney.getBalance(mbrs.getKey(), LogicMoney.AccountType.GUILD.rl) : 0d;
+			double tax = taxedSrc * guild.tax;
+			for (Map.Entry<UUID, Integer> m : mbrs.getValue().entrySet()) {
+				if (!isDividends) {taxedSrc = LogicMoney.getBalance(m.getKey(), LogicMoney.AccountType.PLAYER.rl);}
+				tax = taxedSrc * guild.tax;
+				if (isDividends) {LogicMoney.transferFunds(guild.guildID, LogicMoney.AccountType.GUILD.rl, 
+						m.getKey(), LogicMoney.AccountType.PLAYER.rl, (tax / mbrCount));
+				}
+				else {LogicMoney.transferFunds(m.getKey(), LogicMoney.AccountType.PLAYER.rl, 
+						guild.guildID, LogicMoney.AccountType.GUILD.rl, tax);
+				}
+			}
+		}
+		for (Map.Entry<UUID, Guild> guilds : GUILDS.entrySet()) {
+			if (guilds.getValue().isAdmin) continue;
+			double gbal = LogicMoney.getBalance(guilds.getKey(), LogicMoney.AccountType.GUILD.rl);
+			double debt = LogicMoney.getBalance(guilds.getKey(), LogicMoney.AccountType.DEBT.rl);
+			int chunkCount = chunkCounts.get(guilds.getKey()).getL();
+			double worth = chunkCounts.get(guilds.getKey()).getR();
+			int memberCount = getMemberCount(guilds.getKey());
+			if (debt > 0 && gbal > debt) {
+				LogicMoney.changeBalance(guilds.getKey(), LogicMoney.AccountType.GUILD.rl, -debt);
+				LogicMoney.setBalance(guilds.getKey(), LogicMoney.AccountType.DEBT.rl, 0D);
+				gbal -= debt;
+				//INSERT notification to players that debt has been paid
+			}
+			else if (gbal < debt && debt > 0D && gbal > 0) {
+				LogicMoney.setBalance(guilds.getKey(), LogicMoney.AccountType.GUILD.rl, 0D);
+				LogicMoney.setBalance(guilds.getKey(), LogicMoney.AccountType.DEBT.rl, -gbal);
+				debt -= gbal;
+				gbal = 0d;
+				//INSERT notification to players that x amount of debt has been reduced
+			}
+			double proportion = ((memberCount * ConfigCore.CHUNKS_PER_MEMBER) >= chunkCount ? 0 : 1d - ((double)(memberCount * ConfigCore.CHUNKS_PER_MEMBER) / (double)chunkCount));
+			if (proportion == 0) continue;
+			double taxableWorth = worth * proportion;			
+			if (gbal < (taxableWorth * ConfigCore.GLOBAL_TAX_RATE)) {
+				LogicMoney.setBalance(guilds.getKey(), LogicMoney.AccountType.GUILD.rl, 0D);
+				taxableWorth -= gbal;
+				LogicMoney.changeBalance(guilds.getKey(), LogicMoney.AccountType.DEBT.rl, taxableWorth);
+				debt += taxableWorth;
+				//INSERT notification that debt has been incurred
+			}
+			else {
+				LogicMoney.changeBalance(guilds.getKey(), LogicMoney.AccountType.GUILD.rl, -(taxableWorth * ConfigCore.GLOBAL_TAX_RATE));
+				//INSERT message that taxes at X rate have been paid
+			}
+			if (debt > (worth/2)) {
+				removeGuild(guilds.getKey());
+				//INSERT message that X guild has gone bankrupt.
+			}
+			//INSERT tax execution complete notice.
+		}
+	}
 }

@@ -15,6 +15,7 @@ import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ChunkPos3D;
 import dicemc.gnclib.util.ComVars;
+import dicemc.gnclib.util.Duo;
 
 public interface ILogicRealEstate {
 	
@@ -181,5 +182,17 @@ public interface ILogicRealEstate {
 	public default String publicToggle(ChunkPos3D ck, boolean value) {
 		getCap().get(ck).isPublic = value;
 		return "Access Updated";
+	}
+	
+	public default Map<UUID, Duo<Integer, Double>> getTaxData() {
+		Map<UUID, Duo<Integer, Double>> count = new HashMap<UUID, Duo<Integer, Double>>();
+		for (Map.Entry<ChunkPos3D, ChunkData> cap : getCap().entrySet()) {
+			if (cap.getValue().owner.equals(ComVars.NIL)) continue;
+			Duo<Integer, Double> d = count.getOrDefault(cap.getValue().owner, new Duo<Integer, Double>(0, 0d));
+			d.setL(d.getL() + 1);
+			d.setR(d.getR() + cap.getValue().price);
+			count.put(cap.getValue().owner, d);
+		}
+		return count;
 	}
 }
