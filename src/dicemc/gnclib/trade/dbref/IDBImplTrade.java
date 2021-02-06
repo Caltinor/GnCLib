@@ -49,4 +49,8 @@ public interface IDBImplTrade {
 	List<EntryBid> getBidList(int id);
 	
 	List<EntryOffer> getOfferList(int id, MarketType type);
+	
+	IMarketEntry getMarketEntry(int id, MarketType type);
+	
+	EntryStorage getStorageEntry(int id);
 }

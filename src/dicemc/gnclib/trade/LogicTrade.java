@@ -20,10 +20,12 @@ import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class LogicTrade implements IDBImplTrade{
-	//Singletone Block
+	//Singleton Block
 	private static final LogicTrade INSTANCE = new LogicTrade();
 	private LogicTrade() {}
 	public static LogicTrade get() {return INSTANCE;}
+	
+	public void printTables() {((H2Impl)service).printAllTables();}
 	
 	//Primary logical elements
 	private static IDBImplTrade service;
@@ -49,6 +51,8 @@ public class LogicTrade implements IDBImplTrade{
 		}
 		return new H2Impl(saveName);
 	}
+	
+	public String getMarketName(MarketType type) { return Marketplaces.get(type).marketName; }
 
 	/** Takes the entry and performs account transactions for the type
 	 * then calls the DB method for creating the new DB entry
@@ -61,7 +65,12 @@ public class LogicTrade implements IDBImplTrade{
 	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
 		switch (type) {
 		case LOCAL: {
-			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");			
+			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");
+			if (!entry.getGiveItem()) {
+				double balP = LogicMoney.getBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl);
+				if (balP < entry.getPrice()) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.funds");
+				LogicMoney.changeBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, -(entry.getPrice()));
+			}
 			break;
 		}
 		case GLOBAL: {
@@ -134,13 +143,13 @@ public class LogicTrade implements IDBImplTrade{
 	@Override
 	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, UUID buyer, String buyerName, int count) {
 		if (type.equals(MarketType.AUCTION)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failue.type");
-		if (entry.getStock() < count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.count");
+		if (isStockInsufficient(entry.getStock(), count)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.count");
 		double fee = entry.getPrice() * Marketplaces.get(type).buyFee * count;
 		double cost = entry.getGiveItem() ? entry.getPrice() * count : 0d;
 		double balP = LogicMoney.getBalance(buyer, LogicMoney.AccountType.PLAYER.rl);
 		if (balP < (cost + fee)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.fund");
-		LogicMoney.transferFunds(buyer, LogicMoney.AccountType.PLAYER.rl, entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, cost);
-		LogicMoney.changeBalance(buyer, LogicMoney.AccountType.PLAYER.rl, -fee);
+		if (cost != 0 ) LogicMoney.transferFunds(buyer, LogicMoney.AccountType.PLAYER.rl, entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, cost);
+		if (fee != 0) LogicMoney.changeBalance(buyer, LogicMoney.AccountType.PLAYER.rl, -fee);
 		return service.executeTransaction(entry, type, buyer, buyerName, count);
 	}
 
@@ -195,19 +204,23 @@ public class LogicTrade implements IDBImplTrade{
 
 	@Override
 	public TranslatableResult<TradeResult> pullFromStorage(EntryStorage entry, int count) {
+		entry = getStorageEntry(entry.getID());
 		if (count > entry.count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.pull.failure.count");
 		return service.pullFromStorage(entry, count);
 	}
 
 	@Override
 	public TranslatableResult<TradeResult> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply) {
+		if (type.equals(MarketType.AUCTION)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.supplychange.failure.type");
+		if ((entry.getStock() + newSupply) < 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.supplychange.failure.negative");
+		if ((entry.getStock() + newSupply) == 0) return closeTransaction(entry.getID(), type);
 		if (Marketplaces.get(type).sellFee > 0) {
 			double fee = entry.getPrice() * newSupply * Marketplaces.get(type).sellFee;
 			double balP = LogicMoney.getBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl);
 			if (fee > balP) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.supplychange.failure.fund");
+			
 			LogicMoney.changeBalance(entry.getVendorID(), LogicMoney.AccountType.PLAYER.rl, -(fee));
-		}
-		if ((entry.getStock() + newSupply) < 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "");
+		}		
 		return service.changeTransactionSupply(type, entry, newSupply);
 	}
 
@@ -229,5 +242,16 @@ public class LogicTrade implements IDBImplTrade{
 	@Override
 	public List<EntryOffer> getOfferList(int id, MarketType type) {
 		return service.getOfferList(id, type);
+	}
+	
+	@Override
+	public IMarketEntry getMarketEntry(int id, MarketType type) {return service.getMarketEntry(id, type);}
+	
+	@Override
+	public EntryStorage getStorageEntry(int id) {return service.getStorageEntry(id);}
+	
+	private boolean isStockInsufficient(int stock, int asked) {
+		if (stock < 0) return false;
+		return stock < asked;
 	}
 }
