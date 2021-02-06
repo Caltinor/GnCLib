@@ -13,7 +13,8 @@ public class LogicMoney {
 	public enum AccountType{
 		PLAYER(ComVars.MOD_ID+":player"),
 		GUILD(ComVars.MOD_ID+":guild"),
-		RANK(ComVars.MOD_ID+":rank");
+		RANK(ComVars.MOD_ID+":rank"),
+		DEBT(ComVars.MOD_ID+":debt");
 		public final String rl;
 		AccountType(String resourceLocation) {rl = resourceLocation;}
 	}
@@ -34,6 +35,8 @@ public class LogicMoney {
 		}
 		return new H2Impl(worldName);
 	}
+	
+	public static void printTable() {((H2Impl)service).printAllTables();}
 
 	/* String type resourceLocations are "MODID:ACCOUNT_TYPE" strings
 	 * this is to keep in the style of MC ResourceLocations for 
