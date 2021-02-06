@@ -19,6 +19,11 @@ public class LogicProtection {
 	//elongated: UnListed Non-Member, Listed Non-Member, Listed Member, High Rank Member, Low Rank Member
 	public static enum ResultType {TRUE, FALSE, PACKET}
 	
+	/* NOTES FOR IMPLEMENTATION
+	 * 
+	 * 
+	 */
+	
 	public static MatchType ownerMatch(UUID player, ChunkData data) {
 		//return full perms if the claim is public
 		if (data.isPublic) return MatchType.FULL;
@@ -183,6 +188,12 @@ public class LogicProtection {
 			if (block.equalsIgnoreCase(ConfigCore.UNOWNED_WHITELIST.get(i))) return true;
 		}
 		return false;
+	}
+	
+	public static TranslatableResult<ResultType> onEntityEnterChunkLogic() {
+		//TODO check for fallingentities that should be denied entry
+		// Lays foundation for entry denial permissions.
+		return null;
 	}
 	
 	/**Logic to be applied to BreakEvent on both sides
@@ -360,5 +371,10 @@ public class LogicProtection {
 		}
 		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
 		}
+	}
+	
+	public static TranslatableResult<ResultType> onBonemealUseLogic() {
+		//TODO add bonemeal event logic
+		return null;
 	}
 }
