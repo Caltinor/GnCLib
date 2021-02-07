@@ -6,6 +6,7 @@ import dicemc.gnclib.configs.ConfigCore;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.money.dbref.H2Impl;
 import dicemc.gnclib.money.dbref.IDBImplMoney;
+import dicemc.gnclib.trade.entries.EntryTransactor;
 
 public class LogicMoney {
 	private static IDBImplMoney service;
@@ -56,5 +57,14 @@ public class LogicMoney {
 
 	public static boolean transferFunds(UUID ownerFrom, String ownerFromType, UUID ownerTo, String ownerToType, double value) {
 		return service.transferFunds(ownerFrom, ownerFromType, ownerTo, ownerToType, value);
+	}
+	
+	public static String transactorType(EntryTransactor.Type type) {
+		switch (type) {
+		case NONE: case SERVER: {break;}
+		case PLAYER: {return AccountType.PLAYER.rl;}
+		case GUILD: {return AccountType.GUILD.rl;}
+		default:}
+		return "";
 	}
 }

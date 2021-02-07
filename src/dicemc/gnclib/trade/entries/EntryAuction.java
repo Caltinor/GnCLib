@@ -10,17 +10,15 @@ import io.netty.buffer.ByteBuf;
 
 public class EntryAuction implements IBufferable, IMarketEntry{
 	private int id;
-	public String stack, vendorName, buyerName;
-	public UUID vendor, buyer;
+	public String stack;
+	public EntryTransactor vendor, buyer;
 	public long bidEnd, datePosted, dateClosed;
 	public double price;
 	public boolean openTransaction;
 	
-	public EntryAuction(int id, String stack, String vendorName, String buyerName, UUID vendor, UUID buyer, long bidEnd, long datePosted, long dateClosed, double price, boolean open) {
+	public EntryAuction(int id, String stack, EntryTransactor vendor, EntryTransactor buyer, long bidEnd, long datePosted, long dateClosed, double price, boolean open) {
 		this.id = id;
 		this.stack = stack;
-		this.vendorName = vendorName;
-		this.buyerName = buyerName;
 		this.vendor = vendor;
 		this.buyer = buyer;
 		this.bidEnd = bidEnd;
@@ -29,8 +27,8 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		this.price = price;
 		this.openTransaction = open;
 	}
-	public EntryAuction(UUID vendor, String vendorName, String itemStack, double price) {
-		this(0, itemStack, vendorName, "", vendor, ComVars.NIL, System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
+	public EntryAuction(EntryTransactor vendor, String itemStack, double price) {
+		this(0, itemStack, vendor, new EntryTransactor(), System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
 	}
 	
 	@Override
@@ -38,19 +36,13 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		buf.writeInt(id);
 		buf.writeInt(stack.length());
 		buf.writeCharSequence(stack, Charset.defaultCharset());
-		buf.writeInt(vendorName.length());
-		buf.writeCharSequence(vendorName, Charset.defaultCharset());
-		buf.writeInt(buyerName.length());
-		buf.writeCharSequence(buyerName, Charset.defaultCharset());
-		buf.writeInt(vendor.toString().length());
-		buf.writeCharSequence(vendor.toString(), Charset.defaultCharset());
-		buf.writeInt(buyer.toString().length());
-		buf.writeCharSequence(buyer.toString(), Charset.defaultCharset());
 		buf.writeLong(bidEnd);
 		buf.writeLong(datePosted);
 		buf.writeLong(dateClosed);
 		buf.writeDouble(price);
 		buf.writeBoolean(openTransaction);
+		buf.writeBytes(vendor.writeBytes(buf));
+		buf.writeBytes(buyer.writeBytes(buf));
 		return buf;
 	}
 
@@ -59,25 +51,23 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		id = buf.readInt();
 		int len = buf.readInt();
 		stack = buf.readCharSequence(len, Charset.defaultCharset()).toString();
-		len = buf.readInt();
-		vendorName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
-		len = buf.readInt();
-		buyerName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
-		len = buf.readInt();
-		vendor = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
-		len = buf.readInt();
-		buyer = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
 		bidEnd = buf.readLong();
 		datePosted = buf.readLong();
 		dateClosed = buf.readLong();
 		price = buf.readDouble();
 		openTransaction = buf.readBoolean();
+		vendor = new EntryTransactor();
+		vendor.readBytes(buf);
+		buyer = new EntryTransactor();
+		buyer.readBytes(buf);
 	}
 	
 	@Override
 	public int getID() {return id;}
 	@Override
-	public UUID getVendorID() {return vendor;}
+	public EntryTransactor getVendor() {return vendor;}
+	@Override
+	public EntryTransactor getBuyer() {return buyer;}
 	@Override
 	public double getPrice() {return price;}
 	@Override
@@ -85,15 +75,9 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 	@Override
 	public boolean getGiveItem() {return true;}
 	@Override
-	public String getVendorName() {return vendorName;}
-	@Override
 	public String getStack() {return stack;}
 	@Override
 	public boolean getActive() {return openTransaction;}
-	@Override
-	public UUID getBuyerID() {return buyer;}
-	@Override
-	public String getBuyerName() {return buyerName;}
 	@Override
 	public UUID getLocality() {return ComVars.NIL;}
 	@Override

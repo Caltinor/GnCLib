@@ -1,33 +1,30 @@
 package dicemc.gnclib.trade.entries;
 
 import java.nio.charset.Charset;
-import java.util.UUID;
-
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
 
 public class EntryOffer implements IBufferable{
 	private int id, transactionRef;
-	public String marketName, stack, offererName;
-	public UUID offerer;
+	public String marketName, stack;
+	public EntryTransactor offerer;
 	public long placedDate;
 	public int requestedAmount, offeredAmount;
 	
-	public EntryOffer(int id, int transID, String marketName, String itemStack, UUID offerer, String offererName,
+	public EntryOffer(int id, int transID, String marketName, String itemStack, EntryTransactor offerer,
 			long placedDate, int requestedAmount, int offeredAmount) {
 		this.id = id;
 		this.transactionRef = transID;
 		this.marketName = marketName;
 		this.offerer = offerer;
-		this.offererName = offererName;
 		this.stack = itemStack;
 		this.placedDate = placedDate;
 		this.requestedAmount = requestedAmount;
 		this.offeredAmount = offeredAmount;
 	}
-	public EntryOffer(int transID, String marketName, String itemStack, UUID offerer, String offererName,
+	public EntryOffer(int transID, String marketName, String itemStack, EntryTransactor offerer,
 			int requestedAmount, int offeredAmount) {
-		this(-1, transID, marketName, itemStack, offerer, offererName, System.currentTimeMillis(),
+		this(-1, transID, marketName, itemStack, offerer, System.currentTimeMillis(),
 				requestedAmount, offeredAmount);
 	}
 	
@@ -39,13 +36,10 @@ public class EntryOffer implements IBufferable{
 		buf.writeCharSequence(marketName, Charset.defaultCharset());
 		buf.writeInt(stack.length());
 		buf.writeCharSequence(stack, Charset.defaultCharset());
-		buf.writeInt(offererName.length());
-		buf.writeCharSequence(offererName, Charset.defaultCharset());
-		buf.writeInt(offerer.toString().length());
-		buf.writeCharSequence(offerer.toString(), Charset.defaultCharset());
 		buf.writeLong(placedDate);
 		buf.writeInt(requestedAmount);
 		buf.writeInt(offeredAmount);
+		buf.writeBytes(offerer.writeBytes(buf));
 		return buf;
 	}
 
@@ -57,13 +51,11 @@ public class EntryOffer implements IBufferable{
 		marketName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
 		len = buf.readInt();
 		stack = buf.readCharSequence(len, Charset.defaultCharset()).toString();
-		len = buf.readInt();
-		offererName = buf.readCharSequence(len, Charset.defaultCharset()).toString();
-		len = buf.readInt();
-		offerer = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
 		placedDate = buf.readLong();
 		requestedAmount = buf.readInt();
 		offeredAmount = buf.readInt();
+		offerer = new EntryTransactor();
+		offerer.readBytes(buf);
 	}
 
 	public int getID() {return id;}
