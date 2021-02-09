@@ -2,11 +2,14 @@ package dicemc.gnclib.trade.dbref;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import dicemc.gnclib.trade.entries.EntryAuction;
 import dicemc.gnclib.trade.entries.EntryBid;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
 import dicemc.gnclib.trade.entries.EntryTransactor;
+import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.TranslatableResult;
 
@@ -53,4 +56,6 @@ public interface IDBImplTrade {
 	EntryStorage getStorageEntry(int id);
 	
 	EntryTransactor getTransactor(int id);
+	
+	EntryTransactor getTransactor(UUID refID, Type type);
 }

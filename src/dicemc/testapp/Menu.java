@@ -21,8 +21,9 @@ import dicemc.gnclib.trade.entries.EntryBid;
 import dicemc.gnclib.trade.entries.EntryGlobal;
 import dicemc.gnclib.trade.entries.EntryLocal;
 import dicemc.gnclib.trade.entries.EntryOffer;
-import dicemc.gnclib.trade.entries.EntryServer;
 import dicemc.gnclib.trade.entries.EntryStorage;
+import dicemc.gnclib.trade.entries.EntryTransactor;
+import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.ComVars;
 
@@ -122,7 +123,7 @@ public class Menu {
 				for (int i = 0; i < marketList.size(); i++) {
 					String itemLine = i + marketList.get(i).getClass().getSimpleName()+":"+marketList.get(i).getID()+ " " + marketList.get(i).getStack() +
 							(marketList.get(i).getGiveItem() ? " Offered for $" : " Requested for $") +
-							marketList.get(i).getPrice() + " by:" + marketList.get(i).getVendorName() +
+							marketList.get(i).getPrice() + " by:" + marketList.get(i).getVendor().name +
 							" " + (marketList.get(i).getStock() >= 0 ? marketList.get(i).getStock() : "Unlimited") + " Supply " + 
 							(marketList.get(i) instanceof EntryLocal ? "\n available at " + marketList.get(i).getLocality() : "") +
 							(marketList.get(i) instanceof EntryAuction ? "\n Until:" + new Timestamp(marketList.get(i).getBidEnd()) : "") +
@@ -137,7 +138,7 @@ public class Menu {
 				int index = input.nextInt();
 				System.out.println("Input Row Count");
 				int count = input.nextInt();
-				List<EntryStorage> list = LogicTrade.get().getStorageList(index, count, GnCLibConsole.testPlayer);
+				List<EntryStorage> list = LogicTrade.get().getStorageList(index, count, LogicTrade.get().getTransactor(GnCLibConsole.testPlayer, Type.PLAYER));
 				System.out.println("============PLAYER STORAGE================");
 				for (int i = 0; i < list.size(); i++) {
 					String itemLine = "ID:"+list.get(i).getID()+" Item: " + list.get(i).stack + " Count: " + list.get(i).count;
@@ -151,7 +152,7 @@ public class Menu {
 				for (int i = 0; i < marketList.size(); i++) {
 					String itemLine = i + marketList.get(i).getClass().getSimpleName()+":"+marketList.get(i).getID()+ " " + marketList.get(i).getStack() +
 							(marketList.get(i).getGiveItem() ? " Offered for $" : " Requested for $") +
-							marketList.get(i).getPrice() + " by:" + marketList.get(i).getVendorName() +
+							marketList.get(i).getPrice() + " by:" + marketList.get(i).getVendor().name +
 							" " + (marketList.get(i).getStock() >= 0 ? marketList.get(i).getStock() : "Unlimited") + " Supply " + 
 							(marketList.get(i) instanceof EntryLocal ? "\n available at " + marketList.get(i).getLocality() : "") +
 							(marketList.get(i) instanceof EntryAuction ? "\n Until:" + new Timestamp(marketList.get(i).getBidEnd()) : "") +
@@ -169,7 +170,7 @@ public class Menu {
 					System.out.println("On Market: "+type.toString());
 					System.out.println("=====OFFERS========");
 					LogicTrade.get().getOfferList(myItems.get(i).getID(), type).forEach(e -> {
-						System.out.println(e.stack+" offered:"+e.offeredAmount+" for:"+e.requestedAmount+" by:"+e.offererName);
+						System.out.println(e.stack+" offered:"+e.offeredAmount+" for:"+e.requestedAmount+" by:"+e.offerer.name);
 					});;
 					System.out.println("===================");
 				}
@@ -184,9 +185,8 @@ public class Menu {
 				IMarketEntry entry = marketList.get(id);
 				MarketType market = null;
 				if (entry instanceof EntryLocal) market = MarketType.LOCAL;
-				else if (entry instanceof EntryGlobal) market = MarketType.GLOBAL;
+				else if (entry instanceof EntryGlobal) market = entry.getVendor().type.equals(Type.SERVER) ? MarketType.SERVER : MarketType.GLOBAL;
 				else if (entry instanceof EntryAuction) market = MarketType.AUCTION;
-				else if (entry instanceof EntryServer) market = MarketType.SERVER;
 				System.out.println(new Translation(
 						LogicTrade.get().changeTransactionSupply(market, entry, newSupply)
 						.translationKey)
@@ -199,7 +199,7 @@ public class Menu {
 				int id = input.nextInt();
 				System.out.println("Enter quantity being removed");
 				int count = input.nextInt();
-				EntryStorage entry = new EntryStorage(id, GnCLibConsole.testPlayer, "", count);
+				EntryStorage entry = new EntryStorage(id, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), "", count);
 				System.out.println(new Translation(
 						LogicTrade.get().pullFromStorage(entry, count)
 						.translationKey)
@@ -270,12 +270,12 @@ public class Menu {
 			String itemLine = i +":"+marketList.get(i).getID()+ " " + marketList.get(i).getStack() +
 					(marketList.get(i).getGiveItem() ? " Offered for $" : " Requested for $") +
 					(market.equals(MarketType.AUCTION) ? highestBids.get(i) : marketList.get(i).getPrice()) +
-					" by:" + marketList.get(i).getVendorName() +
+					" by:" + marketList.get(i).getVendor().name +
 					" " + (marketList.get(i).getStock() >= 0 ? marketList.get(i).getStock() : "Unlimited") + " Supply " + 
 					(marketList.get(i) instanceof EntryLocal ? "\n available at " + LogicGuilds.getGuildByID(marketList.get(i).getLocality()).name : "") +
 					(marketList.get(i) instanceof EntryAuction ? "\n Until:" + new Timestamp(marketList.get(i).getBidEnd()) : "") +
 					" Placed on:" + new Timestamp(marketList.get(i).getDTGPlaced()) +
-					(isHistory ? "\n Purchased by: "+marketList.get(i).getBuyerName()+ " on:" + new Timestamp(marketList.get(i).getDTGClosed()) : "");
+					(isHistory ? "\n Purchased by: "+marketList.get(i).getBuyer().name+ " on:" + new Timestamp(marketList.get(i).getDTGClosed()) : "");
 			System.out.println(itemLine);
 		}
 		System.out.println("==================================");
@@ -297,23 +297,18 @@ public class Menu {
 		input.nextLine();
 		switch (market) {
 		case LOCAL: {
-			EntryLocal entry = new EntryLocal(locality, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName,
+			EntryLocal entry = new EntryLocal(locality, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName),
 					stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
-		case GLOBAL: {
-			EntryGlobal entry = new EntryGlobal(GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, stack, stock, price, giveItem);
+		case GLOBAL: case SERVER: {
+			EntryGlobal entry = new EntryGlobal(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
 		case AUCTION: {
-			EntryAuction entry = new EntryAuction(GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, stack, price);
-			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
-			return;
-		}
-		case SERVER: {
-			EntryServer entry = new EntryServer(stack, price, giveItem, stock);
+			EntryAuction entry = new EntryAuction(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, price);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
@@ -327,10 +322,9 @@ public class Menu {
 		int quant = input.nextInt();
 
 		IMarketEntry entry = marketList.get(id);
-		UUID buyer = GnCLibConsole.testPlayer;
-		String buyerName = GnCLibConsole.testPlayerName;
+		EntryTransactor buyer = new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName);
 		System.out.println(new Translation(
-				LogicTrade.get().executeTransaction(entry, market, buyer, buyerName, quant)
+				LogicTrade.get().executeTransaction(entry, market, buyer, quant)
 					.translationKey).print());
 		marketList = LogicTrade.get().getMarketList(market, rowIndex, rowCount, filters, false);
 	}
@@ -342,7 +336,7 @@ public class Menu {
 		if (market.equals(MarketType.AUCTION)) {
 			System.out.println("Enter Bid Amount");
 			double price = input.nextDouble();
-			EntryBid bid = new EntryBid(marketList.get(id).getID(), GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, price);
+			EntryBid bid = new EntryBid(marketList.get(id).getID(), new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), price);
 			System.out.println(new Translation(
 					LogicTrade.get().placeBid(bid, marketList.get(id).getPrice()).translationKey)
 						.print());
@@ -355,9 +349,10 @@ public class Menu {
 			int requested = input.nextInt();
 			System.out.println("Enter offerred amount: ");
 			int offered = input.nextInt();
-			EntryOffer offer = new EntryOffer(marketList.get(id).getID(), LogicTrade.get().getMarketName(market), stack, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName, requested, offered);
+			EntryOffer offer = new EntryOffer(marketList.get(id).getID(), LogicTrade.get().getMarketName(market), stack
+					, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), requested, offered);
 			System.out.println(new Translation(
-					LogicTrade.get().submitOffer(marketList.get(id), offer).translationKey).print());
+					LogicTrade.get().submitOffer(marketList.get(id), offer, market).translationKey).print());
 		}
 	}
 	private static void marketActionViewDetail(IDBImplTrade.MarketType market) {
@@ -383,7 +378,7 @@ public class Menu {
 		System.out.println("Item  : "+ entry.getStack());
 		System.out.println(" supply="+ entry.getStock());
 		System.out.println("for   :$"+ df.format(price));
-		System.out.println("Vendor: "+ entry.getVendorName() +"["+entry.getVendorID().toString()+"]");				
+		System.out.println("Vendor: "+ entry.getVendor().name +"["+entry.getVendor().refID.toString()+"]");				
 		System.out.println("Placed on: "+ new Timestamp(entry.getDTGPlaced()));
 		if (market.equals(MarketType.AUCTION)) System.out.println("Bidding Ends on: "+ new Timestamp(entry.getBidEnd()));
 		if (market.equals(MarketType.LOCAL)) System.out.println("Available at: "+LogicGuilds.getGuildByID(entry.getLocality()).name);
@@ -392,7 +387,7 @@ public class Menu {
 			System.out.println("---------------OFFERS-----------------");
 			for (int i = 0; i < offers.size(); i++) {
 				EntryOffer o = offers.get(i);
-				System.out.println("["+i+"] "+o.offererName+" offers");
+				System.out.println("["+i+"] "+o.offerer.name+" offers");
 				System.out.println(" Item: "+o.stack);
 				System.out.println("Give:For  "+o.offeredAmount+":"+o.requestedAmount);
 				System.out.println("_______________________________________");
@@ -402,7 +397,7 @@ public class Menu {
 			System.out.println("---------------BIDS-----------------");
 			for (int i = 0; i < bids.size(); i++) {
 				EntryBid b = bids.get(i);
-				System.out.println(b.bidderName+" bid $"+df.format(b.value)+" on "+new Timestamp(b.placedDate));
+				System.out.println(b.bidder.name+" bid $"+df.format(b.value)+" on "+new Timestamp(b.placedDate));
 				System.out.println("_______________________________________");
 			}
 		}

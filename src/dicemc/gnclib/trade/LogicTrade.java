@@ -3,6 +3,8 @@ package dicemc.gnclib.trade;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
 import dicemc.gnclib.configs.ConfigCore;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.trade.dbref.H2Impl;
@@ -14,6 +16,7 @@ import dicemc.gnclib.trade.entries.EntryLocal;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
 import dicemc.gnclib.trade.entries.EntryTransactor;
+import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.TranslatableResult;
 
@@ -251,9 +254,13 @@ public class LogicTrade implements IDBImplTrade{
 	@Override
 	public EntryTransactor getTransactor(int id) {return service.getTransactor(id);}
 	
+	@Override
+	public EntryTransactor getTransactor(UUID refID, Type type) {return service.getTransactor(refID, type);}
+	
 	private boolean isStockInsufficient(int stock, int asked) {
 		if (stock < 0) return false;
 		return stock < asked;
 	}
+	
 	
 }

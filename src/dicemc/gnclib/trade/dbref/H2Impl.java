@@ -784,6 +784,28 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 		return new EntryTransactor();
 	}
 	
+	@Override
+	public EntryTransactor getTransactor(UUID refID, Type type) {
+		PreparedStatement st = null;
+		String sql = "SELECT * FROM " + map_Transactors.get(tblTransactors.TABLE_NAME) + " WHERE "+
+				map_Transactors.get(tblTransactors.REF_ID) + "=? AND " +
+				map_Transactors.get(tblTransactors.TYPE) + "=?";
+		try {
+			st = con.prepareStatement(sql);
+			st.setObject(1, refID);
+			st.setInt(2, type.ordinal());
+			ResultSet rs = executeSELECT(st);
+			if (!rs.isBeforeFirst()) return new EntryTransactor();
+			rs.next();
+			int realID = rs.getInt(map_Transactors.get(tblTransactors.ID));
+			UUID realRefID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
+			Type realType = Type.values()[rs.getInt(map_Transactors.get(tblTransactors.TYPE))];
+			String name = rs.getString(map_Transactors.get(tblTransactors.NAME));
+			return new EntryTransactor(realID, realType, realRefID, name);
+		} catch(SQLException e) {e.printStackTrace();}
+		return new EntryTransactor();
+	}
+	
 	private static Map<tblMarkets, String> define_Markets() {
 		Map<tblMarkets, String> map = new HashMap<tblMarkets, String>();
 		map.put(tblMarkets.ID, "ID");
@@ -854,4 +876,6 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 		map.put(MarketType.SERVER, 	"MARKET_SERVER");
 		return map;
 	}
+
+	
 }
