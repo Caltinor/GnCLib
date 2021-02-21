@@ -16,12 +16,14 @@ import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ChunkPos3D;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.Duo;
+import dicemc.gnclib.util.TranslatableResult;
 
 public interface ILogicRealEstate {
+	public enum RealEstateResult {SUCCESS, FAILURE}
 	
 	public Map<ChunkPos3D, ChunkData> getCap();
 	
-	public default String updateChunk(ChunkPos3D ck, Map<String, String> values) {
+	public default TranslatableResult<RealEstateResult> updateChunk(ChunkPos3D ck, Map<String, String> values) {
 		//TODO populate switch statement
 		ChunkData cd = getCap().getOrDefault(ck, new ChunkData(ck));
 		for (Map.Entry<String, String> vals : values.entrySet()) {
@@ -44,43 +46,43 @@ public interface ILogicRealEstate {
 				} catch (JsonSyntaxException e) {e.printStackTrace();}
 				break;
 			}
-			default: return "Key Unrecognized" + vals.getKey();
+			default: return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.updatechunk.failure.key");
 			}
 		}
 		getCap().put(ck, cd);
-		return "Success";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.updatechunk.success");
 	}
 	
 	public default ChunkData getChunk(ChunkPos3D pos) {return getCap().get(pos);}
 	
-	public default String setWhitelist(ChunkPos3D ck, Map<String, WhitelistEntry> whitelist) {
+	public default TranslatableResult<RealEstateResult> setWhitelist(ChunkPos3D ck, Map<String, WhitelistEntry> whitelist) {
 		getCap().get(ck).whitelist = whitelist;
-		if (whitelist.size() == 0) return "Whitelist Cleared";
-		return "Whitelist Set";
+		if (whitelist.size() == 0) return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.setwhitelist.success.clear");
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.setwhitelist.success.set");
 	}
 	
-	public default String updateWhitelistItem(ChunkPos3D ck, String itemRef, WhitelistEntry wlItem) {
+	public default TranslatableResult<RealEstateResult> updateWhitelistItem(ChunkPos3D ck, String itemRef, WhitelistEntry wlItem) {
 		getCap().get(ck).whitelist.put(itemRef, wlItem);
-		return "WLItem Added";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.updatewhitelist.success");
 	}
 	
-	public default String removeWhitelistItem(ChunkPos3D ck, String item) {
+	public default TranslatableResult<RealEstateResult> removeWhitelistItem(ChunkPos3D ck, String item) {
 		WhitelistEntry wle = getCap().get(ck).whitelist.remove(item);
-		if (wle == null) return "Item Not Found.";
-		return "Whitelist Item Removed";
+		if (wle == null) return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.removewhitelistitem.failure.missing");
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.removewhitelistitem.success");
 
 	}
 	
 	public default Map<String, WhitelistEntry> getWhitelist(ChunkPos3D ck) {return getCap().get(ck).whitelist;}
 	
-	public default String addPlayer(ChunkPos3D ck, UUID player, String playerName) {		
+	public default TranslatableResult<RealEstateResult> addPlayer(ChunkPos3D ck, UUID player, String playerName) {		
 		getCap().get(ck).permittedPlayers.put(player, playerName);
-		return "Player Added";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.addplayer.success");
 	}
 	
-	public default String removePlayer(ChunkPos3D ck, UUID player) {
+	public default TranslatableResult<RealEstateResult> removePlayer(ChunkPos3D ck, UUID player) {
 		getCap().get(ck).permittedPlayers.remove(player);
-		return "Player Removed";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.subplayer.success");
 	}
 	
 	public default Map<UUID, String> getPlayers(ChunkPos3D ck) {return getCap().get(ck).permittedPlayers;}
@@ -93,17 +95,18 @@ public interface ILogicRealEstate {
 	public void loadChunkData(ChunkPos3D ck);
 	
 	//BEGIN GAME LOGIC SECTION
-	public default String tempClaim(ChunkPos3D ck, UUID player, String playerName) {
-		if (!getCap().get(ck).owner.equals(ComVars.NIL) || !getCap().get(ck).renter.equals(ComVars.NIL)) return "Chunk Already Claimed";
+	public default TranslatableResult<RealEstateResult> tempClaim(ChunkPos3D ck, UUID player, String playerName) {
+		if (!getCap().get(ck).owner.equals(ComVars.NIL) || !getCap().get(ck).renter.equals(ComVars.NIL)) 
+			return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.tempclaim.failure.occupied");
 		double balP = LogicMoney.getBalance(player, AccountType.PLAYER.rl);
 		if (balP >= getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE) {
 			LogicMoney.changeBalance(player, AccountType.PLAYER.rl, (-1 * (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE)));
 			getCap().get(ck).renter = player;
 			getCap().get(ck).permittedPlayers.put(player, playerName);
 			getCap().get(ck).rentEnd = System.currentTimeMillis() + ConfigCore.TEMPCLAIM_DURATION;
-			return "Temp Claim Successful";
+			return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.tempclaim.success");
 		}
-		else return "Insufficient funds to claim";
+		else return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.tempclaim.failure.funds");
 	}
 	/**
 	 * Used to claim land for a guild.  Method logic checks whether the land can be
@@ -116,9 +119,9 @@ public interface ILogicRealEstate {
 	 * @param guild the guild attempting to claim
 	 * @return a textual result statement.
 	 */
-	public default String guildClaim(ChunkPos3D ck, UUID guild, UUID transactor, LogicGuilds guildImpl) {
+	public default TranslatableResult<RealEstateResult> guildClaim(ChunkPos3D ck, UUID guild, UUID transactor, LogicGuilds guildImpl) {
 		if (!getCap().get(ck).owner.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
-			return "Chunk Already Claimed";
+			return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.guildclaim.failure.occupied");
 		boolean bordersCore = bordersCoreLand(ck, guild);
 		Guild gindex = guildImpl.getGuildByID(guild);
 		//Verify actor is permitted to perform action
@@ -149,8 +152,8 @@ public interface ILogicRealEstate {
 			getCap().get(ck).whitelist = new HashMap<String, WhitelistEntry>();
 			getCap().get(ck).permittedPlayers = new HashMap<UUID, String>();
 		}
-		else return "Insufficient Guild Funds";
-		return "Claim Successful";
+		else return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.guildclaim.failure.funds");
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.guildclaim.success");
 	}
 	
 	/**
@@ -168,20 +171,20 @@ public interface ILogicRealEstate {
 			getCap().get(new ChunkPos3D(ck.x, ck.y+1, ck.z)).owner.equals(guild); 
 	}
 	
-	public default String extendClaim(ChunkPos3D ck, UUID player) {
+	public default TranslatableResult<RealEstateResult> extendClaim(ChunkPos3D ck, UUID player) {
 		double balP = LogicMoney.getBalance(player, AccountType.PLAYER.rl);
 		double cost = (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE * getCap().get(ck).permittedPlayers.size());
 		if (balP >= cost) {
 			LogicMoney.changeBalance(player, AccountType.PLAYER.rl, (-1 * cost));
 			getCap().get(ck).rentEnd += ConfigCore.TEMPCLAIM_DURATION;
-			return "Claim Extended";
+			return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.extendclaim.success");
 		}
-		return "Insufficient Funds";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.FAILURE, "lib.realestate.extendclaim.failure");
 	}
 	
-	public default String publicToggle(ChunkPos3D ck, boolean value) {
+	public default TranslatableResult<RealEstateResult> publicToggle(ChunkPos3D ck, boolean value) {
 		getCap().get(ck).isPublic = value;
-		return "Access Updated";
+		return new TranslatableResult<RealEstateResult>(RealEstateResult.SUCCESS, "lib.realestate.publictoggle.success");
 	}
 	
 	public default Map<UUID, Duo<Integer, Double>> getTaxData() {

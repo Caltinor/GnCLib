@@ -2,6 +2,25 @@ lib.protection.whitelist.apply.success=
 lib.protection.whitelist.apply.deny=
 lib.protection=
 
+lib.realestate.updatechunk.success=Chunk data updated
+lib.realestate.updatechunk.failure.key=Key Unrecognized
+lib.realestate.setwhitelist.success.set=Whitelist set
+lib.realestate.setwhitelist.success.clear=Whitelist cleared
+lib.realestate.updatewhitelist.success=Whitelist entry set
+lib.realestate.removewhitelistitem.success=Whitelist item removed
+lib.realestate.removewhitelistitem.failure.missing=Item not found
+lib.realestate.addplayer.success=Player Added
+lib.realestate.subplayer.success=Player Removed
+lib.realestate.tempclaim.success=Land Temporarily Claimed
+lib.realestate.tempclaim.failure.occupied=This land is already temporarily claimed
+lib.realestate.tempclaim.failure.funds=Insufficient funds to temporarily claim
+lib.realestate.guildclaim.success=Land Claimed for %s
+lib.realestate.guildclaim.failure.occupied=This land is already owned
+lib.realestate.guildclaim.failure.funds=Insufficient funds to claim land
+lib.realestate.extendclaim.success=Claim extended until %s
+lib.realestate.extendclaim.failure=Insufficient funds to extend claim
+lib.realestate.publictoggle.success=Access Updated
+
 lib.guild.create.success=Guild Created
 lib.guild.create.failure=Guild Name Taken
 lib.guild.delete.success=Guild Removed.
