@@ -5,7 +5,9 @@ import java.util.UUID;
 public interface IMarketEntry {
 	int getID();
 	EntryTransactor getVendor();
+	void setVendor(EntryTransactor vendor);
 	EntryTransactor getBuyer();
+	void setBuyer(EntryTransactor buyer);
 	double getPrice();
 	int getStock();
 	boolean getGiveItem();

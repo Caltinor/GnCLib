@@ -90,5 +90,9 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 	public long getDTGPlaced() {return datePosted;}
 	@Override
 	public long getDTGClosed() {return dateClosed;}
+	@Override
+	public void setVendor(EntryTransactor vendor) {this.vendor = vendor;}
+	@Override
+	public void setBuyer(EntryTransactor buyer) {this.buyer = buyer;}
 
 }

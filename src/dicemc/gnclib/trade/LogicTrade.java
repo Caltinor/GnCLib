@@ -64,13 +64,14 @@ public class LogicTrade implements IDBImplTrade{
 	 */
 	@Override
 	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
+		entry.setVendor(service.getTransactor(entry.getVendor().refID, entry.getVendor().type, entry.getVendor().name));
 		switch (type) {
 		case LOCAL: {
 			if (!(entry instanceof EntryLocal)) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.typemismatch");
 			if (!entry.getGiveItem()) {
 				double balP = LogicMoney.getBalance(entry.getVendor().refID, LogicMoney.transactorType(entry.getVendor().type));
-				if (balP < entry.getPrice()) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.funds");
-				LogicMoney.changeBalance(entry.getVendor().refID, LogicMoney.transactorType(entry.getVendor().type), -(entry.getPrice()));
+				if (balP < entry.getPrice() * entry.getStock()) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.funds");
+				LogicMoney.changeBalance(entry.getVendor().refID, LogicMoney.transactorType(entry.getVendor().type), -(entry.getPrice() * entry.getStock()));
 			}
 			break;
 		}
@@ -255,7 +256,7 @@ public class LogicTrade implements IDBImplTrade{
 	public EntryTransactor getTransactor(int id) {return service.getTransactor(id);}
 	
 	@Override
-	public EntryTransactor getTransactor(UUID refID, Type type) {return service.getTransactor(refID, type);}
+	public EntryTransactor getTransactor(UUID refID, Type type, String name) {return service.getTransactor(refID, type, name);}
 	
 	private boolean isStockInsufficient(int stock, int asked) {
 		if (stock < 0) return false;

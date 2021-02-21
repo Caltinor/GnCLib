@@ -216,7 +216,6 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setDouble(++f, entry.getPrice());
 			st.setBoolean(++f, entry.getActive());
 			st.setObject(++f, null);
-			st.setString(++f, null);
 			st.setLong(++f, entry.getDTGPlaced());
 			st.setLong(++f, entry.getDTGClosed());
 			st.setInt(++f, entry.getVendor().id);
@@ -773,7 +772,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st = con.prepareStatement(sql);
 			st.setInt(1, id);
 			ResultSet rs = executeSELECT(st);
-			if (!rs.isBeforeFirst()) return new EntryTransactor();
+			if (!rs.isBeforeFirst()) return null;
 			rs.next();
 			int realID = rs.getInt(map_Transactors.get(tblTransactors.ID));
 			UUID refID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
@@ -785,7 +784,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 	
 	@Override
-	public EntryTransactor getTransactor(UUID refID, Type type) {
+	public EntryTransactor getTransactor(UUID refID, Type type, String name) {
 		PreparedStatement st = null;
 		String sql = "SELECT * FROM " + map_Transactors.get(tblTransactors.TABLE_NAME) + " WHERE "+
 				map_Transactors.get(tblTransactors.REF_ID) + "=? AND " +
@@ -795,13 +794,25 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setObject(1, refID);
 			st.setInt(2, type.ordinal());
 			ResultSet rs = executeSELECT(st);
-			if (!rs.isBeforeFirst()) return new EntryTransactor();
+			if (!rs.isBeforeFirst()) {
+				sql = "INSERT INTO " + map_Transactors.get(tblTransactors.TABLE_NAME) + "("+
+						map_Transactors.get(tblTransactors.REF_ID) + ", " +
+						map_Transactors.get(tblTransactors.TYPE) + ", " +
+						map_Transactors.get(tblTransactors.NAME) + 
+						") VALUES (?, ?, ?);";
+				st = con.prepareStatement(sql);
+				st.setObject(1, refID);
+				st.setInt(2, type.ordinal());
+				st.setString(3, name);
+				if (executeUPDATE(st) == 0) return null;
+				return getTransactor(refID, type, name);
+			}
 			rs.next();
 			int realID = rs.getInt(map_Transactors.get(tblTransactors.ID));
 			UUID realRefID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
 			Type realType = Type.values()[rs.getInt(map_Transactors.get(tblTransactors.TYPE))];
-			String name = rs.getString(map_Transactors.get(tblTransactors.NAME));
-			return new EntryTransactor(realID, realType, realRefID, name);
+			String realName = rs.getString(map_Transactors.get(tblTransactors.NAME));
+			return new EntryTransactor(realID, realType, realRefID, realName);
 		} catch(SQLException e) {e.printStackTrace();}
 		return new EntryTransactor();
 	}

@@ -12,6 +12,7 @@ public class LogicMoney {
 	private static IDBImplMoney service;
 	
 	public enum AccountType{
+		SERVER(ComVars.MOD_ID+":server"),
 		PLAYER(ComVars.MOD_ID+":player"),
 		GUILD(ComVars.MOD_ID+":guild"),
 		RANK(ComVars.MOD_ID+":rank"),
@@ -61,7 +62,8 @@ public class LogicMoney {
 	
 	public static String transactorType(EntryTransactor.Type type) {
 		switch (type) {
-		case NONE: case SERVER: {break;}
+		case NONE: {break;}
+		case SERVER: {return AccountType.SERVER.rl;} 
 		case PLAYER: {return AccountType.PLAYER.rl;}
 		case GUILD: {return AccountType.GUILD.rl;}
 		default:}

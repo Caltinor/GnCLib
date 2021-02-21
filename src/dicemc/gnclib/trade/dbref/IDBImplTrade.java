@@ -57,5 +57,5 @@ public interface IDBImplTrade {
 	
 	EntryTransactor getTransactor(int id);
 	
-	EntryTransactor getTransactor(UUID refID, Type type);
+	EntryTransactor getTransactor(UUID refID, Type type, String name);
 }
