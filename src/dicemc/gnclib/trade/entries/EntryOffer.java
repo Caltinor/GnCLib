@@ -1,17 +1,19 @@
 package dicemc.gnclib.trade.entries;
 
 import java.nio.charset.Charset;
+
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
 
 public class EntryOffer implements IBufferable{
 	private int id, transactionRef;
 	public String marketName, stack;
-	public EntryTransactor offerer;
+	public Agent offerer;
 	public long placedDate;
 	public int requestedAmount, offeredAmount;
 	
-	public EntryOffer(int id, int transID, String marketName, String itemStack, EntryTransactor offerer,
+	public EntryOffer(int id, int transID, String marketName, String itemStack, Agent offerer,
 			long placedDate, int requestedAmount, int offeredAmount) {
 		this.id = id;
 		this.transactionRef = transID;
@@ -22,7 +24,7 @@ public class EntryOffer implements IBufferable{
 		this.requestedAmount = requestedAmount;
 		this.offeredAmount = offeredAmount;
 	}
-	public EntryOffer(int transID, String marketName, String itemStack, EntryTransactor offerer,
+	public EntryOffer(int transID, String marketName, String itemStack, Agent offerer,
 			int requestedAmount, int offeredAmount) {
 		this(-1, transID, marketName, itemStack, offerer, System.currentTimeMillis(),
 				requestedAmount, offeredAmount);
@@ -54,7 +56,7 @@ public class EntryOffer implements IBufferable{
 		placedDate = buf.readLong();
 		requestedAmount = buf.readInt();
 		offeredAmount = buf.readInt();
-		offerer = new EntryTransactor();
+		offerer = new Agent();
 		offerer.readBytes(buf);
 	}
 

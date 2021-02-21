@@ -3,10 +3,10 @@ package dicemc.gnclib.money;
 import java.util.UUID;
 
 import dicemc.gnclib.configs.ConfigCore;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.money.dbref.H2Impl;
 import dicemc.gnclib.money.dbref.IDBImplMoney;
-import dicemc.gnclib.trade.entries.EntryTransactor;
 
 public class LogicMoney {
 	private static IDBImplMoney service;
@@ -60,7 +60,7 @@ public class LogicMoney {
 		return service.transferFunds(ownerFrom, ownerFromType, ownerTo, ownerToType, value);
 	}
 	
-	public static String transactorType(EntryTransactor.Type type) {
+	public static String agentType(Agent.Type type) {
 		switch (type) {
 		case NONE: {break;}
 		case SERVER: {return AccountType.SERVER.rl;} 

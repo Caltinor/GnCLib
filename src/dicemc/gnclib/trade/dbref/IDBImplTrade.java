@@ -8,10 +8,10 @@ import dicemc.gnclib.trade.entries.EntryAuction;
 import dicemc.gnclib.trade.entries.EntryBid;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
-import dicemc.gnclib.trade.entries.EntryTransactor;
-import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.TranslatableResult;
+import dicemc.gnclib.util.Agent.Type;
 
 public interface IDBImplTrade {
 	public static enum TradeResult {SUCCESS, FAILURE}
@@ -31,7 +31,7 @@ public interface IDBImplTrade {
 	
 	TranslatableResult<TradeResult> expireBid(EntryAuction entry);
 	
-	TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, EntryTransactor buyer, int count);
+	TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count);
 	
 	TranslatableResult<TradeResult> submitOffer(IMarketEntry entry, EntryOffer offer, MarketType type);
 	
@@ -45,7 +45,7 @@ public interface IDBImplTrade {
 	
 	List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters, boolean isHistory);
 	
-	List<EntryStorage> getStorageList(int indexStart, int rowCount, EntryTransactor owner);
+	List<EntryStorage> getStorageList(int indexStart, int rowCount, Agent owner);
 	
 	List<EntryBid> getBidList(int id);
 	
@@ -55,7 +55,7 @@ public interface IDBImplTrade {
 	
 	EntryStorage getStorageEntry(int id);
 	
-	EntryTransactor getTransactor(int id);
+	Agent getTransactor(int id);
 	
-	EntryTransactor getTransactor(UUID refID, Type type, String name);
+	Agent getTransactor(UUID refID, Type type, String name);
 }

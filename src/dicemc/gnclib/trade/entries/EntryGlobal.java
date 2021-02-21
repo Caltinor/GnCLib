@@ -3,6 +3,7 @@ package dicemc.gnclib.trade.entries;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
@@ -10,13 +11,13 @@ import io.netty.buffer.ByteBuf;
 public class EntryGlobal  implements IBufferable, IMarketEntry{
 	private int id;
 	public String stack;
-	public EntryTransactor vendor, buyer;
+	public Agent vendor, buyer;
 	public double price;
 	public boolean giveItem, openTransaction;
 	public int stock;
 	public long datePosted, dateClosed;
 
-	public EntryGlobal(int id, String stack, EntryTransactor vendor, EntryTransactor buyer, double price, boolean giveItem, 
+	public EntryGlobal(int id, String stack, Agent vendor, Agent buyer, double price, boolean giveItem, 
 			boolean openTransaction, int stock, long datePosted, long dateClosed) {
 		this.id = id;
 		this.stack = stack;
@@ -29,8 +30,8 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 		this.datePosted = datePosted;
 		this.dateClosed = dateClosed;
 	}
-	public EntryGlobal(EntryTransactor vendor, String itemStack, int stock, double price, boolean giveItem) {
-		this(-1, itemStack, vendor, new EntryTransactor(), price, giveItem, true, stock, System.currentTimeMillis(), 0L);
+	public EntryGlobal(Agent vendor, String itemStack, int stock, double price, boolean giveItem) {
+		this(-1, itemStack, vendor, new Agent(), price, giveItem, true, stock, System.currentTimeMillis(), 0L);
 	}
 	
 	@Override
@@ -60,18 +61,18 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 		stock = buf.readInt();
 		datePosted = buf.readLong();
 		dateClosed = buf.readLong();
-		vendor = new EntryTransactor();
+		vendor = new Agent();
 		vendor.readBytes(buf);
-		buyer = new EntryTransactor();
+		buyer = new Agent();
 		buyer.readBytes(buf);
 	}
 	
 	@Override
 	public int getID() {return id;}
 	@Override
-	public EntryTransactor getVendor() {return vendor;}
+	public Agent getVendor() {return vendor;}
 	@Override
-	public EntryTransactor getBuyer() {return buyer;}
+	public Agent getBuyer() {return buyer;}
 	@Override
 	public double getPrice() {return price;}
 	@Override
@@ -91,8 +92,8 @@ public class EntryGlobal  implements IBufferable, IMarketEntry{
 	@Override
 	public long getDTGClosed() {return dateClosed;}
 	@Override
-	public void setVendor(EntryTransactor vendor) {this.vendor = vendor;}
+	public void setVendor(Agent vendor) {this.vendor = vendor;}
 	@Override
-	public void setBuyer(EntryTransactor buyer) {this.buyer = buyer;}
+	public void setBuyer(Agent buyer) {this.buyer = buyer;}
 
 }

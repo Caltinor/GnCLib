@@ -19,11 +19,11 @@ import dicemc.gnclib.trade.entries.EntryGlobal;
 import dicemc.gnclib.trade.entries.EntryLocal;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
-import dicemc.gnclib.trade.entries.EntryTransactor;
-import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.IDatabase;
 import dicemc.gnclib.util.TranslatableResult;
+import dicemc.gnclib.util.Agent.Type;
 
 public class H2Impl implements IDBImplTrade, IDatabase{
 	public static final Map<tblMarkets, String> map_Markets = define_Markets();
@@ -168,8 +168,8 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
 					double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
 					boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-					EntryTransactor buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
-					EntryTransactor vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
+					Agent buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
+					Agent vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
 					long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
 					long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
 					boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
@@ -341,7 +341,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, EntryTransactor buyer, int count) {
+	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count) {
 		entry = getMarketEntry(entry.getID(), type);
 		PreparedStatement st = null;
 		if (count == entry.getStock()) {
@@ -573,8 +573,8 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
 				double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
 				boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-				EntryTransactor buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
-				EntryTransactor vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
+				Agent buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
+				Agent vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
 				long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
 				long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
 				switch (type) {
@@ -617,7 +617,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 	//NOTE -1 rowCount == get ALL rows
 	@Override
-	public List<EntryStorage> getStorageList(int indexStart, int rowCount, EntryTransactor owner) {
+	public List<EntryStorage> getStorageList(int indexStart, int rowCount, Agent owner) {
 		List<EntryStorage> list = new ArrayList<EntryStorage>();
 		PreparedStatement st = null;
 		String sql = "SELECT * FROM " + map_Storage.get(tblStorage.TABLE_NAME) + " WHERE " +
@@ -657,7 +657,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			else {
 				while (rs.next()) {
 					int bidID = rs.getInt(map_Bids.get(tblBids.ID));
-					EntryTransactor bidder = getTransactor(rs.getInt(map_Bids.get(tblBids.BIDDER_ID)));
+					Agent bidder = getTransactor(rs.getInt(map_Bids.get(tblBids.BIDDER_ID)));
 					long placed = rs.getLong(map_Bids.get(tblBids.DTG_PLACED));
 					double price = rs.getDouble(map_Bids.get(tblBids.PRICE));
 					EntryBid bid = new EntryBid(bidID, id, bidder, placed, price);
@@ -687,7 +687,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 					int offerID = rs.getInt(map_Offers.get(tblOffers.ID));
 					String marketName = rs.getString(map_Offers.get(tblOffers.MARKET_NAME));
 					String stack = rs.getString(map_Offers.get(tblOffers.ITEM));
-					EntryTransactor offerer = getTransactor(rs.getInt(map_Offers.get(tblOffers.OFFERER)));
+					Agent offerer = getTransactor(rs.getInt(map_Offers.get(tblOffers.OFFERER)));
 					long placed = rs.getLong(map_Offers.get(tblOffers.DTG_PLACED));
 					int requested = rs.getInt(map_Offers.get(tblOffers.REQUESTED_AMOUNT));
 					int offerred = rs.getInt(map_Offers.get(tblOffers.OFFERRED_AMOUNT));
@@ -714,27 +714,27 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			String stack = rs.getString(map_Markets.get(tblMarkets.ITEM));
 			double price = rs.getDouble(map_Markets.get(tblMarkets.PRICE));
 			boolean active = rs.getBoolean(map_Markets.get(tblMarkets.ACTIVE_TRANSACTION));
-			EntryTransactor buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
+			Agent buyer = getTransactor(rs.getInt(map_Markets.get(tblMarkets.BUYER_ID)));
 			long placed = rs.getLong(map_Markets.get(tblMarkets.DTG_PLACED));
 			long closed = rs.getLong(map_Markets.get(tblMarkets.DTG_CLOSED));
 			switch (type) {
 			case LOCAL: {
 				UUID locality = (UUID) rs.getObject(map_Markets.get(tblMarkets.LOCALITY));
-				EntryTransactor vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
+				Agent vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
 				boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 				int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
 				return new EntryLocal(transID, stack, vendor, buyer, locality,
 						price, giveItem, active, originalStock, placed, closed);
 			}
 			case GLOBAL: case SERVER: {
-				EntryTransactor vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
+				Agent vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
 				boolean giveItem = rs.getBoolean(map_Markets.get(tblMarkets.VENDOR_GIVE_ITEM));
 				int originalStock = rs.getInt(map_Markets.get(tblMarkets.STOCK));
 				return new EntryGlobal(transID, stack, vendor, buyer, price,
 						giveItem, active, originalStock, placed, closed);
 			}
 			case AUCTION: {
-				EntryTransactor vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
+				Agent vendor = getTransactor(rs.getInt(map_Markets.get(tblMarkets.VENDOR_ID)));
 				long bidEnd = rs.getLong(map_Markets.get(tblMarkets.BID_END));
 				return new EntryAuction(transID, stack, vendor, buyer, bidEnd, placed, closed, price, active);
 			}
@@ -752,19 +752,19 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st = con.prepareStatement(sql);
 			st.setInt(1, id);
 			ResultSet rs = executeSELECT(st);
-			if (!rs.isBeforeFirst()) return new EntryStorage(-1, new EntryTransactor(), "Error", 0);
+			if (!rs.isBeforeFirst()) return new EntryStorage(-1, new Agent(), "Error", 0);
 			rs.next();
 			int realID = rs.getInt(map_Storage.get(tblStorage.ID));
-			EntryTransactor owner = getTransactor(rs.getInt(map_Storage.get(tblStorage.OWNER)));
+			Agent owner = getTransactor(rs.getInt(map_Storage.get(tblStorage.OWNER)));
 			String stack = rs.getString(map_Storage.get(tblStorage.ITEM));
 			int supply = rs.getInt(map_Storage.get(tblStorage.QUANTITY));
 			return new EntryStorage(realID, owner, stack, supply);			
 		} catch(SQLException e) {e.printStackTrace();}
-		return new EntryStorage(-1, new EntryTransactor(), "Error", 0);
+		return new EntryStorage(-1, new Agent(), "Error", 0);
 	}
 	
 	@Override
-	public EntryTransactor getTransactor(int id) {
+	public Agent getTransactor(int id) {
 		PreparedStatement st = null;
 		String sql = "SELECT * FROM " + map_Transactors.get(tblTransactors.TABLE_NAME) + " WHERE "+
 				map_Transactors.get(tblTransactors.ID) + "=?";
@@ -778,13 +778,13 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			UUID refID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
 			Type type = Type.values()[rs.getInt(map_Transactors.get(tblTransactors.TYPE))];
 			String name = rs.getString(map_Transactors.get(tblTransactors.NAME));
-			return new EntryTransactor(realID, type, refID, name);
+			return new Agent(realID, type, refID, name);
 		} catch(SQLException e) {e.printStackTrace();}
-		return new EntryTransactor();
+		return new Agent();
 	}
 	
 	@Override
-	public EntryTransactor getTransactor(UUID refID, Type type, String name) {
+	public Agent getTransactor(UUID refID, Type type, String name) {
 		PreparedStatement st = null;
 		String sql = "SELECT * FROM " + map_Transactors.get(tblTransactors.TABLE_NAME) + " WHERE "+
 				map_Transactors.get(tblTransactors.REF_ID) + "=? AND " +
@@ -812,9 +812,9 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			UUID realRefID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
 			Type realType = Type.values()[rs.getInt(map_Transactors.get(tblTransactors.TYPE))];
 			String realName = rs.getString(map_Transactors.get(tblTransactors.NAME));
-			return new EntryTransactor(realID, realType, realRefID, realName);
+			return new Agent(realID, realType, realRefID, realName);
 		} catch(SQLException e) {e.printStackTrace();}
-		return new EntryTransactor();
+		return new Agent();
 	}
 	
 	private static Map<tblMarkets, String> define_Markets() {

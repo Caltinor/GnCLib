@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.configs.ConfigCore;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.IBufferable;
 import io.netty.buffer.ByteBuf;
@@ -11,12 +12,12 @@ import io.netty.buffer.ByteBuf;
 public class EntryAuction implements IBufferable, IMarketEntry{
 	private int id;
 	public String stack;
-	public EntryTransactor vendor, buyer;
+	public Agent vendor, buyer;
 	public long bidEnd, datePosted, dateClosed;
 	public double price;
 	public boolean openTransaction;
 	
-	public EntryAuction(int id, String stack, EntryTransactor vendor, EntryTransactor buyer, long bidEnd, long datePosted, long dateClosed, double price, boolean open) {
+	public EntryAuction(int id, String stack, Agent vendor, Agent buyer, long bidEnd, long datePosted, long dateClosed, double price, boolean open) {
 		this.id = id;
 		this.stack = stack;
 		this.vendor = vendor;
@@ -27,8 +28,8 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		this.price = price;
 		this.openTransaction = open;
 	}
-	public EntryAuction(EntryTransactor vendor, String itemStack, double price) {
-		this(0, itemStack, vendor, new EntryTransactor(), System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
+	public EntryAuction(Agent vendor, String itemStack, double price) {
+		this(0, itemStack, vendor, new Agent(), System.currentTimeMillis()+ConfigCore.AUCTION_OPEN_DURATION, System.currentTimeMillis(), 0L, price, true);
 	}
 	
 	@Override
@@ -56,18 +57,18 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 		dateClosed = buf.readLong();
 		price = buf.readDouble();
 		openTransaction = buf.readBoolean();
-		vendor = new EntryTransactor();
+		vendor = new Agent();
 		vendor.readBytes(buf);
-		buyer = new EntryTransactor();
+		buyer = new Agent();
 		buyer.readBytes(buf);
 	}
 	
 	@Override
 	public int getID() {return id;}
 	@Override
-	public EntryTransactor getVendor() {return vendor;}
+	public Agent getVendor() {return vendor;}
 	@Override
-	public EntryTransactor getBuyer() {return buyer;}
+	public Agent getBuyer() {return buyer;}
 	@Override
 	public double getPrice() {return price;}
 	@Override
@@ -87,8 +88,8 @@ public class EntryAuction implements IBufferable, IMarketEntry{
 	@Override
 	public long getDTGClosed() {return dateClosed;}
 	@Override
-	public void setVendor(EntryTransactor vendor) {this.vendor = vendor;}
+	public void setVendor(Agent vendor) {this.vendor = vendor;}
 	@Override
-	public void setBuyer(EntryTransactor buyer) {this.buyer = buyer;}
+	public void setBuyer(Agent buyer) {this.buyer = buyer;}
 
 }

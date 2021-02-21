@@ -2,12 +2,14 @@ package dicemc.gnclib.trade.entries;
 
 import java.util.UUID;
 
+import dicemc.gnclib.util.Agent;
+
 public interface IMarketEntry {
 	int getID();
-	EntryTransactor getVendor();
-	void setVendor(EntryTransactor vendor);
-	EntryTransactor getBuyer();
-	void setBuyer(EntryTransactor buyer);
+	Agent getVendor();
+	void setVendor(Agent vendor);
+	Agent getBuyer();
+	void setBuyer(Agent buyer);
 	double getPrice();
 	int getStock();
 	boolean getGiveItem();
