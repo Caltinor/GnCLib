@@ -9,7 +9,7 @@ import dicemc.testapp.impl.RealEstateImpl;
 
 public class GnCLibConsole {
 	public static UUID id = UUID.randomUUID();
-	public static String testPlayerName = "Madood";
+	public static String testPlayerName = "Steve";
 	public static UUID testPlayer;	
 	
 	public static void main(String []args) {
@@ -20,7 +20,6 @@ public class GnCLibConsole {
 		ConfigSrc.init();
 		RunVars.init();
 		testPlayer = RunVars.getPlayerByName(testPlayerName);
-		System.out.println("Test Player Set as: " + testPlayerName);
 		Menu.main();
 	}
 	

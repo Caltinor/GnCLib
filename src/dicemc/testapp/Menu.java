@@ -39,6 +39,7 @@ public class Menu {
 	public static void main() {
 		boolean looping = true;
 		while (looping) {
+		System.out.println("Test Player Set as: " + GnCLibConsole.testPlayerName);
 		System.out.println("Which Menu to Open?");
 		System.out.println("1. Land");
 		System.out.println("2. Market");
@@ -138,7 +139,7 @@ public class Menu {
 				int index = input.nextInt();
 				System.out.println("Input Row Count");
 				int count = input.nextInt();
-				List<EntryStorage> list = LogicTrade.get().getStorageList(index, count, LogicTrade.get().getTransactor(GnCLibConsole.testPlayer, Type.PLAYER));
+				List<EntryStorage> list = LogicTrade.get().getStorageList(index, count, LogicTrade.get().getTransactor(GnCLibConsole.testPlayer, Type.PLAYER, GnCLibConsole.testPlayerName));
 				System.out.println("============PLAYER STORAGE================");
 				for (int i = 0; i < list.size(); i++) {
 					String itemLine = "ID:"+list.get(i).getID()+" Item: " + list.get(i).stack + " Count: " + list.get(i).count;
@@ -302,13 +303,18 @@ public class Menu {
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
-		case GLOBAL: case SERVER: {
+		case GLOBAL: {
 			EntryGlobal entry = new EntryGlobal(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
 		case AUCTION: {
 			EntryAuction entry = new EntryAuction(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, price);
+			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
+			return;
+		}
+		case SERVER: {
+			EntryGlobal entry = new EntryGlobal(new EntryTransactor(Type.SERVER, ComVars.NIL, "Server"), stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
@@ -448,7 +454,7 @@ public class Menu {
 			}
 			else if (selection == 4) {
 				input.nextLine();
-				System.out.println("Enter name of recipient");
+				System.out.println("Enter name of Sender");
 				UUID sender = RunVars.getPlayerByName(input.nextLine());			
 				if (sender.equals(ComVars.NIL)) {
 					System.out.println("Unable to find sender.");
@@ -481,5 +487,18 @@ public class Menu {
 	
 	private static void adminMain() {
 		System.out.println("Admin Menu");
+		System.out.println("Select User:");
+		System.out.println("1. Steve");
+		System.out.println("2. Alex");
+		System.out.println("3. Enderman");
+		System.out.println("4. Rumm");
+		int selection = input.nextInt();
+		switch (selection) {
+		case 1: {GnCLibConsole.testPlayerName="Steve"; break;}
+		case 2: {GnCLibConsole.testPlayerName="Alex"; break;}
+		case 3: {GnCLibConsole.testPlayerName="Enderman"; break;}
+		case 4: {GnCLibConsole.testPlayerName="Rumm"; break;}
+		default: {GnCLibConsole.testPlayerName = "Steve";}}
+		GnCLibConsole.testPlayer = RunVars.getPlayerByName(GnCLibConsole.testPlayerName);
 	}
 }
