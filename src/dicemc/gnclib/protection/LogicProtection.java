@@ -9,6 +9,7 @@ import dicemc.gnclib.realestate.ChunkData;
 import dicemc.gnclib.realestate.WhitelistEntry;
 import dicemc.gnclib.realestate.items.IDefaultWhitelister;
 import dicemc.gnclib.realestate.items.IWhitelister;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.TranslatableResult;
 
@@ -28,26 +29,34 @@ public class LogicProtection {
 		//return full perms if the claim is public
 		if (data.isPublic) return MatchType.FULL;
 		//return full perms if the player is the tempclaim owner
-		if (data.owner.equals(ComVars.NIL) && data.renter.equals(player)) return MatchType.FULL;
+		if (data.owner.refID.equals(ComVars.NIL) && data.renter.refID.equals(player)) return MatchType.FULL;
 		//return full perms if the player is an added member but not the tempclaim owner
-		if (data.owner.equals(ComVars.NIL) && !data.renter.equals(ComVars.NIL)) {
-			if (data.permittedPlayers.containsKey(player)) return MatchType.FULL;}
+		if (data.owner.refID.equals(ComVars.NIL) && !data.renter.refID.equals(ComVars.NIL)) {
+			for (Agent list : data.permittedPlayers) {
+				if (list.refID.equals(player)) return MatchType.FULL;
+			}
+		}
 		//conduct checks if the land is guild owned
-		else if (!data.owner.equals(ComVars.NIL) && !data.isForSale) {
+		else if (!data.owner.refID.equals(ComVars.NIL) && !data.isForSale) {
 			//Idenitfy the proper playerType for the player's relation to the chunk
 			PlayerType pt = PlayerType.UNSET;
+			//preliminary check of player is in permitted list
+			boolean containsPlayer = false;
+			for (Agent list : data.permittedPlayers) {
+				if (list.refID.equals(player)) containsPlayer = true;
+			}
 			//check if player is non-member by checking for invited members and defaulting to the same code if not present
-			if (LogicGuilds.getMembers(data.owner).getOrDefault(player, Integer.MAX_VALUE).equals(Integer.MAX_VALUE)) {
-				if (data.renter.equals(player) || data.permittedPlayers.containsKey(player)) pt = PlayerType.LNM;
+			if (LogicGuilds.getMembers(data.owner.refID).getOrDefault(player, Integer.MAX_VALUE).equals(Integer.MAX_VALUE)) {
+				if (data.renter.refID.equals(player) || containsPlayer) pt = PlayerType.LNM;
 				if (pt == PlayerType.UNSET) pt = PlayerType.ULNM;
 			}
 			else {
-				if (data.renter.equals(player) || data.permittedPlayers.containsKey(player)) pt = PlayerType.LM;
-				if (pt == PlayerType.UNSET && LogicGuilds.getMembers(data.owner).get(player) <= data.permMin) pt = PlayerType.HRM;
+				if (data.renter.refID.equals(player) || containsPlayer) pt = PlayerType.LM;
+				if (pt == PlayerType.UNSET && LogicGuilds.getMembers(data.owner.refID).get(player) <= data.permMin) pt = PlayerType.HRM;
 				else pt = PlayerType.LRM;
 			} 
 			//Use playerType to identify which whitelist setup results in which result matchType
-			if (data.renter.equals(ComVars.NIL)) {
+			if (data.renter.refID.equals(ComVars.NIL)) {
 				if (data.permittedPlayers.size() == 0) {
 					if (data.leasePrice >= 0) {
 						return MatchType.DENY;
@@ -130,7 +139,7 @@ public class LogicProtection {
 				}
 			}
 			else {//is right click
-				if (isSneaking && !data.owner.equals(ComVars.NIL)) {
+				if (isSneaking && !data.owner.refID.equals(ComVars.NIL)) {
 					if (!isSubletPermitted(data, player)) {
 						data.whitelist = ((IDefaultWhitelister)stack).getWhitelist(stack);
 						return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.wlapply");
@@ -179,7 +188,7 @@ public class LogicProtection {
 	 * @return true if the player is sublet permitted by their guild.
 	 */
 	private static boolean isSubletPermitted(ChunkData data, UUID player) {
-		return LogicGuilds.hasPermission(data.owner, PermKey.SUBLET_MANAGE, player);
+		return LogicGuilds.hasPermission(data.owner.refID, PermKey.SUBLET_MANAGE.rl, player);
 	}
 	
 	public static boolean unownedWLBreakCheck(String block) {
@@ -207,11 +216,11 @@ public class LogicProtection {
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
 	public static TranslatableResult<ResultType> onBlockBreakLogic(ChunkData data, String item, UUID player) {
-		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
@@ -273,8 +282,9 @@ public class LogicProtection {
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
 	public static TranslatableResult<ResultType> onBlockPlaceLogic(ChunkData data, UUID player, String item) {
-		if (!ConfigCore.UNOWNED_PROTECTED && data.owner.equals(ComVars.NIL)) return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM)
+		if (!ConfigCore.UNOWNED_PROTECTED && data.owner.refID.equals(ComVars.NIL)) 
+			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM)
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
@@ -332,11 +342,11 @@ public class LogicProtection {
 	//public static TranslatableResult<ResultType> onExplosionLogic(ILogicRealEstate realEstateImpl) {}
 
 	public static TranslatableResult<ResultType> onTrampleLogic(ChunkData data, UUID player, String item) {
-		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
@@ -353,11 +363,11 @@ public class LogicProtection {
 	}
 
 	public static TranslatableResult<ResultType> onBucketUseLogic(ChunkData data, UUID player, String item) {
-		if (data.owner.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
 			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
-		if (data.owner.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {

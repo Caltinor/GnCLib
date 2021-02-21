@@ -2,6 +2,9 @@ package dicemc.gnclib.guilds.entries;
 
 import java.util.UUID;
 
+import dicemc.gnclib.trade.LogicTrade;
+import dicemc.gnclib.util.Agent;
+import dicemc.gnclib.util.Agent.Type;
 import dicemc.gnclib.util.ComVars;
 
 public class Guild {
@@ -28,6 +31,10 @@ public class Guild {
 	
 	public static Guild getDefault() {
 		return new Guild(-1, "No Guild", ComVars.NIL, false, 0.0, true);
+	}
+	
+	public Agent asAgent() {
+		return LogicTrade.get().getTransactor(guildID, Type.GUILD, name);
 	}
 	
 	public void setTPLocation(int x, int y, int z) {

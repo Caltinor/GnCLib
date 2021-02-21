@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import dicemc.gnclib.guilds.LogicGuilds.GuildResult;
-import dicemc.gnclib.guilds.LogicGuilds.PermKey;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.util.TranslatableResult;
@@ -34,7 +33,7 @@ public interface IDBImplGuild {
 	TranslatableResult<GuildResult> addRank(UUID guildID, int rank, String title);
 	TranslatableResult<GuildResult> setRankTitle(UUID guildID, int rank, String title);
 	
-	List<RankPerms> getPermissionEntries(UUID guildID, PermKey key);
+	List<RankPerms> getPermissionEntries(UUID guildID, String key);
 	TranslatableResult<GuildResult> setPermission(RankPerms perm);
 	TranslatableResult<GuildResult> removePermission(RankPerms perm);
 }

@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import dicemc.gnclib.guilds.LogicGuilds.GuildResult;
-import dicemc.gnclib.guilds.LogicGuilds.PermKey;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.util.IDatabase;
@@ -107,7 +106,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	}
 
 	@Override
-	public List<RankPerms> getPermissionEntries(UUID guildID, PermKey key) {
+	public List<RankPerms> getPermissionEntries(UUID guildID, String key) {
 		// TODO Auto-generated method stub
 		return null;
 	}

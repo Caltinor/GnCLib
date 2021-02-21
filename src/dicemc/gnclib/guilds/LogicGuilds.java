@@ -21,22 +21,31 @@ public class LogicGuilds {
 	public static enum GuildResult {SUCCESS, FAIL}
 	public static enum GuildUpdates {NAME, OPEN, TAX}
 	public static enum PermKey {
-    	CLAIM_LAND,			//can claim land connected to the core
-    	OUTPOST_CREATE,		//can create new outposts
-    	CLAIM_ABANDON,		//can abandon claims
-    	CLAIM_SELL,			//can sell claims
-    	SUBLET_MANAGE,		//can change sublet settings
-    	CHANGE_NAME,
-    	SET_TAX,
-    	SET_OPEN_TO_JOIN,
-    	BUY_NEW_RANK,
-    	RANK_TITLE_CHANGE,
-    	ACCOUNT_WITHDRAW,
-    	MANAGE_PERMISSIONS,
-    	SET_MEMBER_RANKS,
-    	INVITE_MEMBERS,
-    	KICK_MEMBER
+    	CLAIM_LAND(ComVars.MOD_ID+":claim_land"),			//can claim land connected to the core
+    	OUTPOST_CREATE(ComVars.MOD_ID+":outpost_create"),		//can create new outposts
+    	CLAIM_ABANDON(ComVars.MOD_ID+":claim_abandon"),		//can abandon claims
+    	CLAIM_SELL(ComVars.MOD_ID+":claim_sell"),			//can sell claims
+    	SUBLET_MANAGE(ComVars.MOD_ID+":sublet_manage"),		//can change sublet settings
+    	CHANGE_NAME(ComVars.MOD_ID+":change_name"),
+    	SET_TAX(ComVars.MOD_ID+":set_tax"),
+    	SET_OPEN_TO_JOIN(ComVars.MOD_ID+":set_open_to_join"),
+    	BUY_NEW_RANK(ComVars.MOD_ID+":buy_new_rank"),
+    	RANK_TITLE_CHANGE(ComVars.MOD_ID+":rank_title_change"),
+    	ACCOUNT_WITHDRAW(ComVars.MOD_ID+":account_withdraw"),
+    	MANAGE_PERMISSIONS(ComVars.MOD_ID+":manage_permissions"),
+    	SET_MEMBER_RANKS(ComVars.MOD_ID+":set_member_ranks"),
+    	INVITE_MEMBERS(ComVars.MOD_ID+":invite_members"),
+    	KICK_MEMBER(ComVars.MOD_ID+":kick_member");
+    	public final String rl;
+		PermKey(String resourceLocation) {rl = resourceLocation;}
     }
+	
+	/* this map and any subsequent maps should be populated
+	 * and saved as they are needed.  the below methods should
+	 * first check if the data exists in the map before querying
+	 * the database.  this should limit queries and maintain
+	 * adequate performance.
+	 */
 	//GuildID, guildData
 	private static Map<UUID, Guild> GUILDS = new HashMap<UUID, Guild>();
 	//GuildID, playerid, memberData
@@ -44,13 +53,7 @@ public class LogicGuilds {
 	//GuildID, ranksequence, rankTitle
 	private static Map<UUID, Map<Integer, String>> RANKS = new HashMap<UUID, Map<Integer, String>>();
 	//GuildID<PermKey<list of permitted classifications>>
-	private static Map<UUID, Map<PermKey, List<RankPerms>>> PERMS = new HashMap<UUID, Map<PermKey, List<RankPerms>>>();
-	/* this map and any subsequent maps should be populated
-	 * and saved as they are needed.  the below methods should
-	 * first check if the data exists in the map before querying
-	 * the database.  this should limit queries and maintain
-	 * adequate performance.
-	 */
+	private static Map<UUID, Map<String, List<RankPerms>>> PERMS = new HashMap<UUID, Map<String, List<RankPerms>>>();
 	
 	public static void init(String worldName) {
 		service = setService(worldName);
@@ -79,11 +82,11 @@ public class LogicGuilds {
 		if (!RANKS.containsKey(guildID)) RANKS.put(guildID, service.getGuildRanks(guildID));
 		return RANKS.get(guildID);
 	}
-	public static Map<PermKey, List<RankPerms>> getPerms(UUID guildID) {
+	public static Map<String, List<RankPerms>> getPerms(UUID guildID) {
 		if (!PERMS.containsKey(guildID)) {
-			PERMS.put(guildID, new HashMap<PermKey, List<RankPerms>>());
+			PERMS.put(guildID, new HashMap<String, List<RankPerms>>());
 			for (PermKey key : PermKey.values()) {
-				PERMS.get(guildID).put(key, service.getPermissionEntries(guildID, key));
+				PERMS.get(guildID).put(key.rl, service.getPermissionEntries(guildID, key.rl));
 			}
 		}
 		return PERMS.get(guildID);
@@ -139,7 +142,7 @@ public class LogicGuilds {
     	LogicMoney.getBalance(id, ComVars.MOD_ID+":guild");
     	RANKS.put(id, new HashMap<Integer, String>());
     	addRank(id, "Member");
-    	for (PermKey perms : PermKey.values()) {addPermission(id, perms, ComVars.NIL, 0);}
+    	for (PermKey perms : PermKey.values()) {addPermission(id, perms.rl, ComVars.NIL, 0);}
     	return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.create.success");
 	}
 	
@@ -166,10 +169,10 @@ public class LogicGuilds {
     	else return new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.member.remove.failure");
     }	
 	
-	public static TranslatableResult<GuildResult> addPermission(UUID guildID, PermKey permTag, UUID owner, int rank) { 
+	public static TranslatableResult<GuildResult> addPermission(UUID guildID, String permTag, UUID owner, int rank) { 
 		return setPermission(guildID, permTag, owner, rank); }
     
-	public static TranslatableResult<GuildResult> setPermission(UUID guildID, PermKey permTag, UUID owner, int rank) {
+	public static TranslatableResult<GuildResult> setPermission(UUID guildID, String permTag, UUID owner, int rank) {
     	RankPerms perm = new RankPerms(guildID, permTag, owner, rank);
     	List<RankPerms> list = getPerms(guildID).get(permTag);
     	for (int i = 0; i < list.size(); i++) {
@@ -180,7 +183,7 @@ public class LogicGuilds {
     	return service.setPermission(perm);
     }
 	
-	public static TranslatableResult<GuildResult> removePermission(UUID guildID, PermKey permTag, UUID owner, int rank) {
+	public static TranslatableResult<GuildResult> removePermission(UUID guildID, String permTag, UUID owner, int rank) {
 		TranslatableResult<GuildResult> result = new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.permission.remove.failure");
 		RankPerms perm = new RankPerms(guildID, permTag, owner, rank);
 		List<RankPerms> list = getPerms(guildID).get(permTag);
@@ -194,7 +197,7 @@ public class LogicGuilds {
 		return result;
 	}
 	
-	public static boolean hasPermission(UUID guildID, PermKey key, UUID player) {
+	public static boolean hasPermission(UUID guildID, String key, UUID player) {
 		int rank = getMembers(guildID).get(player);
 		List<RankPerms> list = getPerms(guildID).get(key);
 		for (int i = 0; i < list.size(); i++) {
