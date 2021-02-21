@@ -22,10 +22,10 @@ import dicemc.gnclib.trade.entries.EntryGlobal;
 import dicemc.gnclib.trade.entries.EntryLocal;
 import dicemc.gnclib.trade.entries.EntryOffer;
 import dicemc.gnclib.trade.entries.EntryStorage;
-import dicemc.gnclib.trade.entries.EntryTransactor;
-import dicemc.gnclib.trade.entries.EntryTransactor.Type;
 import dicemc.gnclib.trade.entries.IMarketEntry;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
+import dicemc.gnclib.util.Agent.Type;
 
 public class Menu {
 	private static final Scanner input = new Scanner(System.in);	
@@ -200,7 +200,7 @@ public class Menu {
 				int id = input.nextInt();
 				System.out.println("Enter quantity being removed");
 				int count = input.nextInt();
-				EntryStorage entry = new EntryStorage(id, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), "", count);
+				EntryStorage entry = new EntryStorage(id, new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), "", count);
 				System.out.println(new Translation(
 						LogicTrade.get().pullFromStorage(entry, count)
 						.translationKey)
@@ -298,23 +298,23 @@ public class Menu {
 		input.nextLine();
 		switch (market) {
 		case LOCAL: {
-			EntryLocal entry = new EntryLocal(locality, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName),
+			EntryLocal entry = new EntryLocal(locality, new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName),
 					stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
 		case GLOBAL: {
-			EntryGlobal entry = new EntryGlobal(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, stock, price, giveItem);
+			EntryGlobal entry = new EntryGlobal(new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
 		case AUCTION: {
-			EntryAuction entry = new EntryAuction(new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, price);
+			EntryAuction entry = new EntryAuction(new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), stack, price);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
 		case SERVER: {
-			EntryGlobal entry = new EntryGlobal(new EntryTransactor(Type.SERVER, ComVars.NIL, "Server"), stack, stock, price, giveItem);
+			EntryGlobal entry = new EntryGlobal(new Agent(Type.SERVER, ComVars.NIL, "Server"), stack, stock, price, giveItem);
 			System.out.println(new Translation(LogicTrade.get().createTransaction(entry, market).translationKey).print());
 			return;
 		}
@@ -328,7 +328,7 @@ public class Menu {
 		int quant = input.nextInt();
 
 		IMarketEntry entry = marketList.get(id);
-		EntryTransactor buyer = new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName);
+		Agent buyer = new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName);
 		System.out.println(new Translation(
 				LogicTrade.get().executeTransaction(entry, market, buyer, quant)
 					.translationKey).print());
@@ -342,7 +342,7 @@ public class Menu {
 		if (market.equals(MarketType.AUCTION)) {
 			System.out.println("Enter Bid Amount");
 			double price = input.nextDouble();
-			EntryBid bid = new EntryBid(marketList.get(id).getID(), new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), price);
+			EntryBid bid = new EntryBid(marketList.get(id).getID(), new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), price);
 			System.out.println(new Translation(
 					LogicTrade.get().placeBid(bid, marketList.get(id).getPrice()).translationKey)
 						.print());
@@ -356,7 +356,7 @@ public class Menu {
 			System.out.println("Enter offerred amount: ");
 			int offered = input.nextInt();
 			EntryOffer offer = new EntryOffer(marketList.get(id).getID(), LogicTrade.get().getMarketName(market), stack
-					, new EntryTransactor(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), requested, offered);
+					, new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), requested, offered);
 			System.out.println(new Translation(
 					LogicTrade.get().submitOffer(marketList.get(id), offer, market).translationKey).print());
 		}

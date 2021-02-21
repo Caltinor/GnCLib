@@ -21,10 +21,4 @@ public class RealEstateImpl implements ILogicRealEstate{
 		
 	}
 
-	@Override
-	public void loadChunkData(ChunkPos3D ck) {
-		// TODO Auto-generated method stub
-		
-	}
-
 }
