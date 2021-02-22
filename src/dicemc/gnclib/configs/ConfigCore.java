@@ -40,8 +40,8 @@ public class ConfigCore {
 	public static double TENANT_PROTECTION_RATIO = 0.5;
 	//Protection Related Variables
 	public static boolean UNOWNED_PROTECTED = true;
-	public static List<String> PROTECTED_DIMENSION_BLACKLIST = new ArrayList<String>();
-	public static List<String> UNOWNED_WHITELIST = new ArrayList<String>();
+	public static List<String> PROTECTED_DIMENSION_BLACKLIST = new ArrayList<String>(); //used to establish dimensions not to be protected/claimed
+	public static List<String> UNOWNED_WHITELIST = new ArrayList<String>(); //for 1.12 version only.
 	//Trade Related Variables
 	public static double MARKET_GLOBAL_TAX_BUY = 0.1;
 	public static double MARKET_GLOBAL_TAX_SELL = 0.1;

@@ -192,6 +192,7 @@ public class LogicProtection {
 	}
 	
 	public static boolean unownedWLBreakCheck(String block) {
+		//TODO find a way to implement tags in protection checks
 		if (ConfigCore.UNOWNED_WHITELIST.size() == 0) return false;
 		for (int i = 0; i < ConfigCore.UNOWNED_WHITELIST.size(); i++) {
 			if (block.equalsIgnoreCase(ConfigCore.UNOWNED_WHITELIST.get(i))) return true;
