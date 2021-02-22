@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import dicemc.gnclib.guilds.LogicGuilds.GuildResult;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.util.IDatabase;
+import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class H2Impl implements IDBImplGuild, IDatabase{
@@ -32,7 +32,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 		map.put(tbl, sql);
 		return map;
 	}
-	
+
 	@Override
 	public void printAllTables() {
 		// TODO Auto-generated method stub
@@ -52,13 +52,13 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> setGuild(Guild guild) {
+	public TranslatableResult<ResultType> setGuild(Guild guild) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> removeGuild(UUID guildID) {
+	public TranslatableResult<ResultType> removeGuild(UUID guildID) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -70,19 +70,19 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> addMember(UUID guildID, UUID playerID, int rank) {
+	public TranslatableResult<ResultType> addMember(UUID guildID, UUID playerID, int rank) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> setMember(UUID guildID, UUID playerID, int rank) {
+	public TranslatableResult<ResultType> setMember(UUID guildID, UUID playerID, int rank) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> removeMember(UUID guildID, UUID playerID) {
+	public TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -94,13 +94,13 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> addRank(UUID guildID, int rank, String title) {
+	public TranslatableResult<ResultType> addRank(UUID guildID, int rank, String title) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> setRankTitle(UUID guildID, int rank, String title) {
+	public TranslatableResult<ResultType> setRankTitle(UUID guildID, int rank, String title) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -112,15 +112,16 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> setPermission(RankPerms perm) {
+	public TranslatableResult<ResultType> setPermission(RankPerms perm) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public TranslatableResult<GuildResult> removePermission(RankPerms perm) {
+	public TranslatableResult<ResultType> removePermission(RankPerms perm) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
 
 }

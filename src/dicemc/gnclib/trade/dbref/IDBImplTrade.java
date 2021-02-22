@@ -12,9 +12,9 @@ import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.TranslatableResult;
 import dicemc.gnclib.util.Agent.Type;
+import dicemc.gnclib.util.ResultType;
 
 public interface IDBImplTrade {
-	public static enum TradeResult {SUCCESS, FAILURE}
 	public static enum MarketType {LOCAL, GLOBAL, AUCTION, SERVER}
 	public static enum FilterType {SOURCE_VENDOR, SOURCE_LOCALITY, PRICE_FROM, PRICE_TO, IS_OFFER, ORDER_PRICE, INCLUDE_MY_SALES}
 	public static enum tblMarkets {ID, ITEM, VENDOR_ID, LOCALITY, BID_END, PRICE, VENDOR_GIVE_ITEM, STOCK, ACTIVE_TRANSACTION, BUYER_ID, DTG_PLACED, DTG_CLOSED}
@@ -23,25 +23,25 @@ public interface IDBImplTrade {
 	public static enum tblOffers {TABLE_NAME, ID, MARKET_NAME, TRANS_ID, ITEM, OFFERER, DTG_PLACED,	REQUESTED_AMOUNT, OFFERRED_AMOUNT}
 	public static enum tblTransactors {TABLE_NAME, ID, REF_ID, TYPE, NAME}
 	//Market Specific actions
-	TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type);
+	TranslatableResult<ResultType> createTransaction(IMarketEntry entry, MarketType type);
 	
-	TranslatableResult<TradeResult> closeTransaction(int id, MarketType type);
+	TranslatableResult<ResultType> closeTransaction(int id, MarketType type);
 	
-	TranslatableResult<TradeResult> acceptOffer(IMarketEntry entry, MarketType type, EntryOffer offer);
+	TranslatableResult<ResultType> acceptOffer(IMarketEntry entry, MarketType type, EntryOffer offer);
 	
-	TranslatableResult<TradeResult> expireBid(EntryAuction entry);
+	TranslatableResult<ResultType> expireBid(EntryAuction entry);
 	
-	TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count);
+	TranslatableResult<ResultType> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count);
 	
-	TranslatableResult<TradeResult> submitOffer(IMarketEntry entry, EntryOffer offer, MarketType type);
+	TranslatableResult<ResultType> submitOffer(IMarketEntry entry, EntryOffer offer, MarketType type);
 	
-	TranslatableResult<TradeResult> placeBid(EntryBid bid, double itemValue);
+	TranslatableResult<ResultType> placeBid(EntryBid bid, double itemValue);
 	
-	TranslatableResult<TradeResult> addToStorage(EntryStorage entry);
+	TranslatableResult<ResultType> addToStorage(EntryStorage entry);
 	
-	TranslatableResult<TradeResult> pullFromStorage(EntryStorage entry, int count);
+	TranslatableResult<ResultType> pullFromStorage(EntryStorage entry, int count);
 	
-	TranslatableResult<TradeResult> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply);
+	TranslatableResult<ResultType> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply);
 	
 	List<IMarketEntry> getMarketList(MarketType type, int indexStart, int rowCount, Map<FilterType, String> filters, boolean isHistory);
 	

@@ -1,13 +1,16 @@
 package dicemc.gnclib.guilds.entries;
 
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 import dicemc.gnclib.trade.LogicTrade;
 import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.Agent.Type;
 import dicemc.gnclib.util.ComVars;
+import dicemc.gnclib.util.IBufferable;
+import io.netty.buffer.ByteBuf;
 
-public class Guild {
+public class Guild implements IBufferable{
 	public int id;
 	public UUID guildID;
 	public String name;
@@ -51,5 +54,37 @@ public class Guild {
 	}
 	public void changeMarketSize(int change) {
 		setMarketSize((marketSize + change) >= 0 ? marketSize + change : 0);
+	}
+	
+	@Override
+	public ByteBuf writeBytes(ByteBuf buf) {
+		buf.writeInt(id);
+		buf.writeInt(tpX);
+		buf.writeInt(tpY);
+		buf.writeInt(tpZ);
+		buf.writeInt(marketSize);
+		buf.writeBoolean(open);
+		buf.writeBoolean(isAdmin);
+		buf.writeDouble(tax);
+		buf.writeInt(guildID.toString().length());
+		buf.writeCharSequence(guildID.toString(), Charset.defaultCharset());
+		buf.writeInt(name.length());
+		buf.writeCharSequence(name, Charset.defaultCharset());
+		return buf;
+	}
+	@Override
+	public void readBytes(ByteBuf buf) {
+		id = buf.readInt();
+		tpX = buf.readInt();
+		tpY = buf.readInt();
+		tpZ = buf.readInt();
+		marketSize = buf.readInt();
+		open = buf.readBoolean();
+		isAdmin = buf.readBoolean();
+		tax = buf.readDouble();
+		int len = buf.readInt();
+		guildID = UUID.fromString(buf.readCharSequence(len, Charset.defaultCharset()).toString());
+		len = buf.readInt();
+		name = buf.readCharSequence(len, Charset.defaultCharset()).toString();
 	}
 }

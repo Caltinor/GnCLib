@@ -11,6 +11,7 @@ import dicemc.gnclib.realestate.items.IDefaultWhitelister;
 import dicemc.gnclib.realestate.items.IWhitelister;
 import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
+import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class LogicProtection {
@@ -18,7 +19,6 @@ public class LogicProtection {
 	public static enum MatchType {FULL, DENY, WHITELIST}
 	enum PlayerType {UNSET, ULNM, LNM, LM, HRM, LRM}
 	//elongated: UnListed Non-Member, Listed Non-Member, Listed Member, High Rank Member, Low Rank Member
-	public static enum ResultType {TRUE, FALSE, PACKET}
 	
 	/* NOTES FOR IMPLEMENTATION
 	 * 
@@ -126,56 +126,56 @@ public class LogicProtection {
 	public static enum WhitelisterType {NOT_WHITELISTER, DEFAULT, GREEN_STICK, RED_STICK}	
 	public static TranslatableResult<ResultType> isWhitelisterAction(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
 		switch (type) {
-		case NOT_WHITELISTER: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");} 
+		case NOT_WHITELISTER: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");} 
 		case DEFAULT: {
 			if (isLeftClick) {
 				if (isSneaking) {
 					((IDefaultWhitelister)stack).setWhitelister(stack, data.whitelist);
-					return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 				else {//not sneaking
 					((IDefaultWhitelister)stack).addToWhitelister(stack, item, WhitelistEntry.UpdateType.BREAK);
-					return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 			}
 			else {//is right click
 				if (isSneaking && !data.owner.refID.equals(ComVars.NIL)) {
 					if (!isSubletPermitted(data, player)) {
 						data.whitelist = ((IDefaultWhitelister)stack).getWhitelist(stack);
-						return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.wlapply");
+						return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.wlapply");
 					}
-					else {return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.wlapply.deny");}
+					else {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.wlapply.deny");}
 				}
 				else {//not sneaking
 					((IDefaultWhitelister)stack).addToWhitelister(stack, item, WhitelistEntry.UpdateType.INTERACT);
-					return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 			}
 		}
 		case GREEN_STICK: {
-			if (!isSubletPermitted(data, player)) {return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.deny");}
+			if (!isSubletPermitted(data, player)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.deny");}
 			if (isLeftClick) {
 				data.whitelist.computeIfAbsent("block", key -> new WhitelistEntry()).setCanBreak(true);
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.newsetting");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.newsetting");
 			}
 			else {//is right click
 				data.whitelist.computeIfAbsent("block", key -> new WhitelistEntry()).setCanInteract(true);
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.newsetting");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.newsetting");
 			}
 		}
 		case RED_STICK: {
-			if (!isSubletPermitted(data, player)) {return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.deny");} 
+			if (!isSubletPermitted(data, player)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.deny");} 
 			if (isLeftClick) {
 				data.whitelist.computeIfAbsent("block", key -> new WhitelistEntry()).setCanBreak(false);
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.newsetting");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.newsetting");
 			}
 			else {//is right click
 				data.whitelist.computeIfAbsent("block", key -> new WhitelistEntry()).setCanInteract(false);
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.stick.newsetting");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.stick.newsetting");
 			}
 		}
 		default:}
-		return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 	}
 	
 	/** checks to see if the player has the required guild permission
@@ -217,22 +217,22 @@ public class LogicProtection {
 	 */
 	public static TranslatableResult<ResultType> onBlockBreakLogic(ChunkData data, String item, UUID player) {
 		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.breakdeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.breakdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.breakdeny");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.breakdeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
 		}
 	}
 	
@@ -257,19 +257,19 @@ public class LogicProtection {
 	public static TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
 		//Whitelister interact toggle
 		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking);
-		if (result.result.equals(ResultType.TRUE)) {return result;}
+		if (result.result.equals(ResultType.SUCCESS)) {return result;}
 		//normal protection checks
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.breakdeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.block.breakdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.INTERACT)) {
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.breakdeny");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.block.breakdeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
 		}
 	}
 	
@@ -283,38 +283,38 @@ public class LogicProtection {
 	 */
 	public static TranslatableResult<ResultType> onBlockPlaceLogic(ChunkData data, UUID player, String item) {
 		if (!ConfigCore.UNOWNED_PROTECTED && data.owner.refID.equals(ComVars.NIL)) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM)
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.placedeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.block.placedeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.PLACE))
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.block.placedeny");
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.block.placedeny");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
 		default:}
-		return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 	}
 	
 	//Check if player is exempt before calling this method
 	public static TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
 		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking);
-		if (result.result.equals(ResultType.TRUE)) return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+		if (result.result.equals(ResultType.SUCCESS)) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.interactdeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.entity.interactdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.INTERACT)) {
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.interactdeny");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.entity.interactdeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
 		default: }
-		return new TranslatableResult<ResultType>(ResultType.TRUE, "");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 	}
 	
 	/** this method checks the logic of LivingDamageEvent and AttackEntityEvents
@@ -331,11 +331,11 @@ public class LogicProtection {
 	 */
 	public static TranslatableResult<ResultType> onEntityHarmLogic(ChunkData data, UUID player, String target) {
 		switch (ownerMatch(player, data)) {
-		case DENY :{ return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.breakdeny");}
+		case DENY :{ return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.entity.breakdeny");}
 		case WHITELIST: {
-			if (!whitelistCheck(target, data, ActionType.BREAK)) { return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.whitelist.entity.breakdeny");} 
+			if (!whitelistCheck(target, data, ActionType.BREAK)) { return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.whitelist.entity.breakdeny");} 
 		}
-		default: return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		default: return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
 	}
 	
 	//Explosion cannot reasonably be default.  this needs to be done on the implementation
@@ -343,43 +343,43 @@ public class LogicProtection {
 
 	public static TranslatableResult<ResultType> onTrampleLogic(ChunkData data, UUID player, String item) {
 		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.trampledeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.trampledeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.trampledeny");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.trampledeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
 		}
 	}
 
 	public static TranslatableResult<ResultType> onBucketUseLogic(ChunkData data, UUID player, String item) {
 		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.bucketdeny");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
-				return new TranslatableResult<ResultType>(ResultType.TRUE, "event.chunk.bucketdeny");
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FALSE, "");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FALSE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
 		}
 	}
 	

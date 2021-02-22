@@ -36,7 +36,8 @@ public class ConfigSrc {
 				0.1,						//tempclaimRate, 
 				0.75,						//landAbandonRefundRate, 
 				2000d,						//outpostCreateCost, 
-				true);						//autoTempclaim
+				true,						//autoTempclaim
+				0.5);						//tenantProtectionRatio
 		ConfigCore.defineTradeConfigValues(
 				"test World 1",	//saveName
 				0.1, 			//globalTaxBuy, 

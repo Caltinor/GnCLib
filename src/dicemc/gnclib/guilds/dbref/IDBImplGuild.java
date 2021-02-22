@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import dicemc.gnclib.guilds.LogicGuilds.GuildResult;
+import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.util.TranslatableResult;
@@ -21,19 +21,19 @@ public interface IDBImplGuild {
 	 * @return Guild object as reflected in the database
 	 */
 	Guild addGuild(Guild guild);
-	TranslatableResult<GuildResult> setGuild(Guild guild);
-	TranslatableResult<GuildResult> removeGuild(UUID guildID);
+	TranslatableResult<ResultType> setGuild(Guild guild);
+	TranslatableResult<ResultType> removeGuild(UUID guildID);
 	
 	Map<UUID, Integer> getGuildMembers(UUID guildID);
-	TranslatableResult<GuildResult> addMember(UUID guildID, UUID playerID, int rank);
-	TranslatableResult<GuildResult> setMember(UUID guildID, UUID playerID, int rank);
-	TranslatableResult<GuildResult> removeMember(UUID guildID, UUID playerID);
+	TranslatableResult<ResultType> addMember(UUID guildID, UUID playerID, int rank);
+	TranslatableResult<ResultType> setMember(UUID guildID, UUID playerID, int rank);
+	TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID);
 	
 	Map<Integer, String> getGuildRanks(UUID guildID);
-	TranslatableResult<GuildResult> addRank(UUID guildID, int rank, String title);
-	TranslatableResult<GuildResult> setRankTitle(UUID guildID, int rank, String title);
+	TranslatableResult<ResultType> addRank(UUID guildID, int rank, String title);
+	TranslatableResult<ResultType> setRankTitle(UUID guildID, int rank, String title);
 	
 	List<RankPerms> getPermissionEntries(UUID guildID, String key);
-	TranslatableResult<GuildResult> setPermission(RankPerms perm);
-	TranslatableResult<GuildResult> removePermission(RankPerms perm);
+	TranslatableResult<ResultType> setPermission(RankPerms perm);
+	TranslatableResult<ResultType> removePermission(RankPerms perm);
 }

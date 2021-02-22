@@ -14,11 +14,11 @@ import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.money.LogicMoney.AccountType;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.Duo;
+import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.util.TranslatableResult;
 
 public class LogicGuilds {
 	private static IDBImplGuild service;
-	public static enum GuildResult {SUCCESS, FAIL}
 	public static enum GuildUpdates {NAME, OPEN, TAX}
 	public static enum PermKey {
     	CLAIM_LAND(ComVars.MOD_ID+":claim_land"),			//can claim land connected to the core
@@ -110,15 +110,15 @@ public class LogicGuilds {
 		return Guild.getDefault();
     }
     
-    public static TranslatableResult<GuildResult> setGuild(Guild newGuildImage, List<GuildUpdates> changes) {
+    public static TranslatableResult<ResultType> setGuild(Guild newGuildImage, List<GuildUpdates> changes) {
     	Guild ogg = getGuilds().get(newGuildImage.guildID);
     	for (int i = 0; i < changes.size(); i++) {
     		switch (changes.get(i)) {
     		case NAME: { 
     			if (LogicGuilds.getGuildByName(newGuildImage.name).id == -1) {
-    				return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.create.failure");}
+    				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.create.failure");}
     			if (LogicMoney.getBalance(newGuildImage.guildID, AccountType.GUILD.rl) < ConfigCore.GUILD_NAME_CHANGE_COST) {
-    				return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.update.name.falure");}
+    				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.update.name.falure");}
     			else {    				
     				LogicMoney.changeBalance(newGuildImage.guildID, AccountType.GUILD.rl, -(ConfigCore.GUILD_NAME_CHANGE_COST));
     				ogg.name = newGuildImage.name;	
@@ -134,7 +134,7 @@ public class LogicGuilds {
     	return service.setGuild(ogg);
     }
 
-	public static TranslatableResult<GuildResult> createGuild(String name, boolean isAdmin) {
+	public static TranslatableResult<ResultType> createGuild(String name, boolean isAdmin) {
 		UUID id = ComVars.unrepeatedUUIDs(getGuilds());
 		Guild newGuild = new Guild(name, id, isAdmin);
 		newGuild = service.addGuild(newGuild);
@@ -142,11 +142,11 @@ public class LogicGuilds {
     	LogicMoney.getBalance(id, ComVars.MOD_ID+":guild");
     	RANKS.put(id, new HashMap<Integer, String>());
     	addRank(id, "Member");
-    	for (PermKey perms : PermKey.values()) {addPermission(id, perms.rl, ComVars.NIL, 0);}
-    	return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.create.success");
+    	for (PermKey perms : PermKey.values()) {addPermission(new RankPerms(id, perms.rl, ComVars.NIL, 0, true));}
+    	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.create.success");
 	}
 	
-	public static TranslatableResult<GuildResult> removeGuild(UUID guildID) {
+	public static TranslatableResult<ResultType> removeGuild(UUID guildID) {
 		getGuilds().remove(guildID);
 		MEMBERS.remove(guildID);
 		RANKS.remove(guildID);
@@ -154,76 +154,73 @@ public class LogicGuilds {
 		return service.removeGuild(guildID);
 	}
 	
-	public static TranslatableResult<GuildResult> addMember(UUID guildID, UUID playerID, int rank) {return updateMember(guildID, playerID, rank);}
+	public static TranslatableResult<ResultType> addMember(UUID guildID, UUID playerID, int rank) {return updateMember(guildID, playerID, rank);}
 	
-	public static TranslatableResult<GuildResult> updateMember(UUID guildID, UUID playerID, int rank) {
-    	if (!getRanks(guildID).containsKey(rank)) return new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.member.update.failure");
+	public static TranslatableResult<ResultType> updateMember(UUID guildID, UUID playerID, int rank) {
+    	if (!getRanks(guildID).containsKey(rank)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.update.failure");
     	else {
     		getMembers(guildID).put(playerID, rank);
     	}
     	return service.setMember(guildID, playerID, rank);
     }
 	
-	public static TranslatableResult<GuildResult> removeMember(UUID guildID, UUID playerID) {
-    	if (getMembers(guildID).remove(playerID) != null) return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.member.remove.success");   	
-    	else return new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.member.remove.failure");
+	public static TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID) {
+    	if (getMembers(guildID).remove(playerID) != null) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.member.remove.success");   	
+    	else return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
     }	
 	
-	public static TranslatableResult<GuildResult> addPermission(UUID guildID, String permTag, UUID owner, int rank) { 
-		return setPermission(guildID, permTag, owner, rank); }
+	public static TranslatableResult<ResultType> addPermission(RankPerms perm) { 
+		return setPermission(perm); }
     
-	public static TranslatableResult<GuildResult> setPermission(UUID guildID, String permTag, UUID owner, int rank) {
-    	RankPerms perm = new RankPerms(guildID, permTag, owner, rank);
-    	List<RankPerms> list = getPerms(guildID).get(permTag);
+	public static TranslatableResult<ResultType> setPermission(RankPerms perm) {
+    	List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
     	for (int i = 0; i < list.size(); i++) {
-    		if (list.get(i).matches(perm)) return new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.permission.set.failure");
+    		if (list.get(i).matches(perm)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure");
     	}
     	list.add(perm);
-    	getPerms(guildID).put(permTag, list);
+    	getPerms(perm.guildID).put(perm.key, list);
     	return service.setPermission(perm);
     }
 	
-	public static TranslatableResult<GuildResult> removePermission(UUID guildID, String permTag, UUID owner, int rank) {
-		TranslatableResult<GuildResult> result = new TranslatableResult<GuildResult>(GuildResult.FAIL, "lib.guild.permission.remove.failure");
-		RankPerms perm = new RankPerms(guildID, permTag, owner, rank);
-		List<RankPerms> list = getPerms(guildID).get(permTag);
+	public static TranslatableResult<ResultType> removePermission(RankPerms perm) {
+		List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
 		for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) {
-    			getPerms(guildID).get(permTag).remove(i); 
-    			result = service.removePermission(perm);
-    			break;
+    			getPerms(perm.guildID).get(perm.key).remove(i); 
+    			return service.removePermission(perm);
     		} 
     	}
-		return result;
+		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.remove.failure");
 	}
 	
 	public static boolean hasPermission(UUID guildID, String key, UUID player) {
 		int rank = getMembers(guildID).get(player);
 		List<RankPerms> list = getPerms(guildID).get(key);
 		for (int i = 0; i < list.size(); i++) {
-			if (list.get(i).player.equals(player) || list.get(i).rank == rank) return true;
+			if (list.get(i).player.equals(player) || list.get(i).rank == rank || 
+					(list.get(i).rank < rank && list.get(i).cascades)) return true;
 		}
 		return false;
 	}
 	
-	public static TranslatableResult<GuildResult> addRank(UUID guildID, String title) {
+	public static TranslatableResult<ResultType> addRank(UUID guildID, String title) {
 		int rank = getBottomRank(guildID)+1;
     	getRanks(guildID).put(rank, title);
     	service.addRank(guildID, rank, title);
-    	return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.rank.add.success");
+    	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.add.success");
     }
 	
-	public static TranslatableResult<GuildResult> setRankTitle(UUID guildID, int rank, String newTitle) {
-		if (!getGuilds().containsKey(guildID)) {return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.rank.set.failure");}
-		if (!getRanks(guildID).containsKey(rank)) {return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.rank.set.failure");}
+	public static TranslatableResult<ResultType> setRankTitle(UUID guildID, int rank, String newTitle) {
+		if (!getGuilds().containsKey(guildID)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
+		if (!getRanks(guildID).containsKey(rank)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
 		if (LogicMoney.getBalance(guildID, LogicMoney.AccountType.GUILD.rl) < ConfigCore.GUILD_NAME_CHANGE_COST) {
-			return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.rank.set.failure");}
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
 		else {
 			LogicMoney.changeBalance(guildID, LogicMoney.AccountType.GUILD.rl, -(ConfigCore.GUILD_NAME_CHANGE_COST));
 		}
 		getRanks(guildID).put(rank, newTitle);
 		service.setRankTitle(guildID, rank, newTitle);
-    	return new TranslatableResult<GuildResult>(GuildResult.SUCCESS, "lib.guild.rank.set.success");
+    	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.success");
     }
 	
 	public static int getBottomRank(UUID guildID) {

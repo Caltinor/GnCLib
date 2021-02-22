@@ -1,6 +1,9 @@
 package dicemc.gnclib.realestate;
 
-public class WhitelistEntry {
+import dicemc.gnclib.util.IBufferable;
+import io.netty.buffer.ByteBuf;
+
+public class WhitelistEntry implements IBufferable{
 	public static enum UpdateType {BREAK, INTERACT}
 	private boolean canBreak, canInteract;
 	/* if more specific protection features are added, include them and update constructors and getters/setters
@@ -19,4 +22,17 @@ public class WhitelistEntry {
 	public void setCanBreak(boolean bool) {canBreak = bool;}
 	public boolean getCanInteract() {return canInteract;}
 	public void setCanInteract(boolean bool) {canInteract = bool;}
+
+	@Override
+	public ByteBuf writeBytes(ByteBuf buf) {
+		buf.writeBoolean(canBreak);
+		buf.writeBoolean(canInteract);
+		return buf;
+	}
+
+	@Override
+	public void readBytes(ByteBuf buf) {
+		canBreak = buf.readBoolean();
+		canInteract = buf.readBoolean();
+	}
 }

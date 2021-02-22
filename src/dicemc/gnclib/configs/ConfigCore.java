@@ -37,6 +37,7 @@ public class ConfigCore {
 	public static double LAND_ABANDON_REFUND_RATE = 0.75;
 	public static double OUTPOST_CREATE_COST = 2000d;
 	public static boolean AUTO_TEMPCLAIM = true;
+	public static double TENANT_PROTECTION_RATIO = 0.5;
 	//Protection Related Variables
 	public static boolean UNOWNED_PROTECTED = true;
 	public static List<String> PROTECTED_DIMENSION_BLACKLIST = new ArrayList<String>();
@@ -102,7 +103,7 @@ public class ConfigCore {
 	}
 	
 	public static String defineRealEstateConfigValues(double defaultLandPrice, long tempclaimDuration, int chunksPerMember, double tempclaimRate,
-			double landAbandonRefundRate, double outpostCreateCost, boolean autoTempclaim) {
+			double landAbandonRefundRate, double outpostCreateCost, boolean autoTempclaim, double tenantProtectionRatio) {
 		DEFAULT_LAND_PRICE = defaultLandPrice;
 		TEMPCLAIM_DURATION = tempclaimDuration;
 		CHUNKS_PER_MEMBER = chunksPerMember;
@@ -110,6 +111,7 @@ public class ConfigCore {
 		LAND_ABANDON_REFUND_RATE = landAbandonRefundRate;
 		OUTPOST_CREATE_COST = outpostCreateCost;
 		AUTO_TEMPCLAIM = autoTempclaim;
+		TENANT_PROTECTION_RATIO = tenantProtectionRatio;
 		return "Real Estate Values uploaded to Lib Variables";
 	}
 	

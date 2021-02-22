@@ -1,6 +1,8 @@
 package dicemc.gnclib.util;
 
-public class ChunkPos3D {
+import io.netty.buffer.ByteBuf;
+
+public class ChunkPos3D implements IBufferable{
 	public int x, y, z;
 	private static final int xSize = 1 + doMath(smallestPower(30000000));
 	private static final int zSize = xSize;
@@ -52,5 +54,20 @@ public class ChunkPos3D {
 	     i = i | i >> 8;
 	     i = i | i >> 16;
 	     return  i + 1;
+	}
+
+	@Override
+	public ByteBuf writeBytes(ByteBuf buf) {
+		buf.writeInt(x);
+		buf.writeInt(y);
+		buf.writeInt(z);
+		return buf;
+	}
+
+	@Override
+	public void readBytes(ByteBuf buf) {
+		x = buf.readInt();
+		y = buf.readInt();
+		z = buf.readInt();
 	}
 }

@@ -22,6 +22,7 @@ import dicemc.gnclib.trade.entries.EntryStorage;
 import dicemc.gnclib.trade.entries.IMarketEntry;
 import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.IDatabase;
+import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.util.TranslatableResult;
 import dicemc.gnclib.util.Agent.Type;
 
@@ -143,7 +144,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 	
 	@Override
-	public TranslatableResult<TradeResult> createTransaction(IMarketEntry entry, MarketType type) {
+	public TranslatableResult<ResultType> createTransaction(IMarketEntry entry, MarketType type) {
 		PreparedStatement st = null;
 		if (!type.equals(MarketType.AUCTION)) {
 			String sql = "SELECT * FROM " + marketTables.get(type) + " WHERE " + 
@@ -225,13 +226,13 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st.setBoolean(++f, entry.getGiveItem());
 				st.setInt(++f, entry.getStock());
 			}
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.create.failure.sql");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.create.failure.sql");
 		} catch (SQLException e) {e.printStackTrace();}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.create.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.create.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> closeTransaction(int id, MarketType type) {
+	public TranslatableResult<ResultType> closeTransaction(int id, MarketType type) {
 		PreparedStatement st = null;
 		String sql = "UPDATE " + marketTables.get(type) + " SET " + 
 				map_Markets.get(tblMarkets.DTG_CLOSED) +" =?, "+ 
@@ -242,7 +243,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setLong(1, System.currentTimeMillis());
 			st.setBoolean(2, false);
 			st.setInt(3, id);
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.close.failure.missing");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.close.failure.missing");
 		} catch (SQLException e) {e.printStackTrace();}
 		List<EntryOffer> offerList = getOfferList(id, type);
 		for (EntryOffer list : offerList) {
@@ -252,15 +253,15 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			try {
 				st = con.prepareStatement(sql);
 				st.setInt(1, list.getTransactionID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.close.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.close.failure.missing");
 			} catch (SQLException e) {e.printStackTrace();}
 		}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.close.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.close.success");
 	}
 
 	@SuppressWarnings("resource")
 	@Override
-	public TranslatableResult<TradeResult> acceptOffer(IMarketEntry entry, MarketType type, EntryOffer offer) {
+	public TranslatableResult<ResultType> acceptOffer(IMarketEntry entry, MarketType type, EntryOffer offer) {
 		entry = getMarketEntry(entry.getID(), type);
 		addToStorage(new EntryStorage(offer.offerer, entry.getStack(), offer.requestedAmount));
 		addToStorage(new EntryStorage(entry.getVendor(), offer.stack, offer.offeredAmount));
@@ -271,7 +272,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 		try {
 			st = con.prepareStatement(sql);
 			st.setInt(1, offer.getID());
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.acceptoffer.failure.missing");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.acceptoffer.failure.missing");
 		} catch(SQLException e) {e.printStackTrace();} 
 		if (offer.requestedAmount == entry.getStock()) {
 			sql = "UPDATE " + marketTables.get(type) + " SET " +
@@ -283,7 +284,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st.setObject(1, offer.offerer.id);
 				st.setDouble(2, 0);
 				st.setInt(4, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.acceptoffer.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.acceptoffer.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 			return closeTransaction(entry.getID(), type);
 		}
@@ -295,7 +296,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st = con.prepareStatement(sql);
 				st.setInt(1, entry.getStock() - offer.requestedAmount);
 				st.setInt(2, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.acceptoffer.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.acceptoffer.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 			sql = "INSERT INTO " + marketTables.get(type) + " (" +
 					map_Markets.get(tblMarkets.ITEM) +", " +
@@ -325,15 +326,15 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st.setBoolean(++f, entry.getGiveItem());
 				st.setInt(++f, offer.requestedAmount);
 				if (type.equals(MarketType.LOCAL)) st.setObject(++f, entry.getLocality());
-				if (executeUPDATE(st) == 0 ) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.acceptoffer.failure.insert");
+				if (executeUPDATE(st) == 0 ) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.acceptoffer.failure.insert");
 			} catch (SQLException e) {e.printStackTrace();}
 		}
 		
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.acceptoffer.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.acceptoffer.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> expireBid(EntryAuction entry) {
+	public TranslatableResult<ResultType> expireBid(EntryAuction entry) {
 		List<EntryBid> bids = getBidList(entry.getID());
 		if (bids.size()==0) addToStorage(new EntryStorage(entry.vendor, entry.stack, entry.getStock()));
 		else addToStorage(new EntryStorage(bids.get(bids.size()-1).bidder, entry.stack, entry.getStock()));
@@ -341,7 +342,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count) {
+	public TranslatableResult<ResultType> executeTransaction(IMarketEntry entry, MarketType type, Agent buyer, int count) {
 		entry = getMarketEntry(entry.getID(), type);
 		PreparedStatement st = null;
 		if (count == entry.getStock()) {
@@ -352,7 +353,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st = con.prepareStatement(sql);
 				st.setInt(1, buyer.id);
 				st.setInt(2, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.executetrans.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 			return closeTransaction(entry.getID(), type);
 		}
@@ -364,7 +365,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st = con.prepareStatement(sql);
 				st.setInt(1, entry.getStock() - count);
 				st.setInt(2, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.executetrans.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 			sql = "INSERT INTO " + marketTables.get(type) + "(" +
 					map_Markets.get(tblMarkets.ITEM) +", " +
@@ -394,16 +395,16 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st.setBoolean(++f, entry.getGiveItem());
 				st.setInt(++f, count);
 				if (type.equals(MarketType.LOCAL)) st.setObject(++f, entry.getLocality());
-				if (executeUPDATE(st) == 0 ) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.executetrans.failure.missing");
+				if (executeUPDATE(st) == 0 ) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.executetrans.failure.missing");
 			} catch (SQLException e) {e.printStackTrace();}
 		}
-		TranslatableResult<TradeResult> res = addToStorage(new EntryStorage(buyer, entry.getStack(), count));
-		if (res.result.equals(TradeResult.FAILURE)) return res;
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.executetrans.success");
+		TranslatableResult<ResultType> res = addToStorage(new EntryStorage(buyer, entry.getStack(), count));
+		if (res.result.equals(ResultType.FAILURE)) return res;
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.executetrans.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> submitOffer(IMarketEntry entry, EntryOffer offer, MarketType type) {
+	public TranslatableResult<ResultType> submitOffer(IMarketEntry entry, EntryOffer offer, MarketType type) {
 		entry = getMarketEntry(entry.getID(), type);
 		PreparedStatement st = null;
 		String sql = "INSERT INTO " + map_Offers.get(tblOffers.TABLE_NAME) + " (" +
@@ -424,13 +425,13 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setInt(6, offer.offeredAmount);
 			st.setInt(7, offer.requestedAmount);
 			st.setLong(8, offer.placedDate);
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.offer.failure.insert");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.offer.failure.insert");
 		} catch(SQLException e) {e.printStackTrace();}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.offer.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.offer.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> placeBid(EntryBid bid, double itemValue) {
+	public TranslatableResult<ResultType> placeBid(EntryBid bid, double itemValue) {
 		PreparedStatement st = null;
 		String sql = "INSERT INTO " + map_Bids.get(tblBids.TABLE_NAME) + " (" +
 				map_Bids.get(tblBids.TRANSACTION_ID) + ", " +
@@ -444,13 +445,13 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st.setInt(2, bid.bidder.id);
 			st.setDouble(4, bid.value);
 			st.setLong(5, bid.placedDate);
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.placebid.failure.insert");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.placebid.failure.insert");
 		} catch(SQLException e) {e.printStackTrace();}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.placebid.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.placebid.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> addToStorage(EntryStorage entry) {
+	public TranslatableResult<ResultType> addToStorage(EntryStorage entry) {
 		List<EntryStorage> stoList = getStorageList(0, -1, entry.owner);
 		int existingEntryID = -1;
 		int newCount = entry.count;
@@ -470,7 +471,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st = con.prepareStatement(sql);
 				st.setInt(1, newCount);
 				st.setInt(2, existingEntryID);
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.place.failure.insert");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.storage.place.failure.insert");
 			} catch(SQLException e) {e.printStackTrace();}
 		}
 		else {//(existingEntryID == -1)
@@ -484,15 +485,15 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st.setString(1, entry.stack);
 				st.setInt(2, entry.owner.id);
 				st.setInt(3, entry.count);
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.place.failure.insert");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.storage.place.failure.insert");
 			} catch(SQLException e) {e.printStackTrace();}
 		}		
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.storage.place.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.storage.place.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> pullFromStorage(EntryStorage entry, int count) {
-		if (entry.getID() == -1) new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.storage.pull.failure.entry");
+	public TranslatableResult<ResultType> pullFromStorage(EntryStorage entry, int count) {
+		if (entry.getID() == -1) new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.storage.pull.failure.entry");
 		PreparedStatement st = null;
 		String sql = "SELECT ";
 		if (entry.count == count) {
@@ -501,7 +502,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			try {
 				st = con.prepareStatement(sql);
 				st.setInt(1, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.pull.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.storage.pull.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 		}
 		else if (entry.count > count) {
@@ -512,15 +513,15 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 				st = con.prepareStatement(sql);
 				st.setInt(1, entry.count-count);
 				st.setInt(2, entry.getID());
-				if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.pull.failure.missing");
+				if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.storage.pull.failure.missing");
 			} catch(SQLException e) {e.printStackTrace();}
 		}
-		else if (entry.count < count) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.storage.pull.failure.count");
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.storage.pull.success");
+		else if (entry.count < count) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.storage.pull.failure.count");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.storage.pull.success");
 	}
 
 	@Override
-	public TranslatableResult<TradeResult> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply) {
+	public TranslatableResult<ResultType> changeTransactionSupply(MarketType type, IMarketEntry entry, int newSupply) {
 		entry = getMarketEntry(entry.getID(), type);
 		PreparedStatement st = null;
 		String sql = "UPDATE " + marketTables.get(type) + " SET " + 
@@ -530,9 +531,9 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			st = con.prepareStatement(sql);
 			st.setInt(1, entry.getStock() + newSupply);
 			st.setInt(2, entry.getID());
-			if (executeUPDATE(st) == 0) return new TranslatableResult<TradeResult>(TradeResult.FAILURE, "lib.market.supplychange.failure.missing");
+			if (executeUPDATE(st) == 0) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.market.supplychange.failure.missing");
 		} catch(SQLException e) {e.printStackTrace();}
-		return new TranslatableResult<TradeResult>(TradeResult.SUCCESS, "lib.market.supplychange.success");
+		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.market.supplychange.success");
 	}
 
 	@Override
@@ -812,6 +813,7 @@ public class H2Impl implements IDBImplTrade, IDatabase{
 			UUID realRefID = (UUID) rs.getObject(map_Transactors.get(tblTransactors.REF_ID));
 			Type realType = Type.values()[rs.getInt(map_Transactors.get(tblTransactors.TYPE))];
 			String realName = rs.getString(map_Transactors.get(tblTransactors.NAME));
+			//TODO add in a name update to the agents table
 			return new Agent(realID, realType, realRefID, realName);
 		} catch(SQLException e) {e.printStackTrace();}
 		return new Agent();

@@ -25,6 +25,7 @@ lib.realestate.extendclaim.failure=Insufficient funds to extend claim
 lib.realestate.updatesublet.success=Sublet Information Updated
 lib.realestate.updatesublet.failure.permission=Player not permitted to change sublet settings
 lib.realestate.updatesublet.failure.contracted=Sublet settings may not be changed while being rented
+lib.realestate.disablesublet.failure.protected=Sublet cannot be disabled due to current occupant grace period
 lib.realestate.expiresublet.success=Rental Period ended for %s
 lib.realestate.rentsublet.success=Area rented for $%s for %s hours
 lib.realestate.rentsublet.failure.funds=Insufficient funds to rent area
