@@ -11,11 +11,12 @@ import dicemc.gnclib.guilds.dbref.IDBImplGuild;
 import dicemc.gnclib.guilds.entries.Guild;
 import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.money.LogicMoney;
-import dicemc.gnclib.money.LogicMoney.AccountType;
+import dicemc.gnclib.util.Agent;
 import dicemc.gnclib.util.ComVars;
 import dicemc.gnclib.util.Duo;
 import dicemc.gnclib.util.ResultType;
 import dicemc.gnclib.util.TranslatableResult;
+import dicemc.gnclib.util.Agent.Type;
 
 public class LogicGuilds {
 	private static IDBImplGuild service;
@@ -110,31 +111,37 @@ public class LogicGuilds {
 		return Guild.getDefault();
     }
     
-    public static TranslatableResult<ResultType> setGuild(Guild newGuildImage, List<GuildUpdates> changes) {
-    	Guild ogg = getGuilds().get(newGuildImage.guildID);
-    	for (int i = 0; i < changes.size(); i++) {
-    		switch (changes.get(i)) {
-    		case NAME: { 
-    			if (LogicGuilds.getGuildByName(newGuildImage.name).id == -1) {
-    				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.create.failure");}
-    			if (LogicMoney.getBalance(newGuildImage.guildID, AccountType.GUILD.rl) < ConfigCore.GUILD_NAME_CHANGE_COST) {
-    				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.update.name.falure");}
-    			else {    				
-    				LogicMoney.changeBalance(newGuildImage.guildID, AccountType.GUILD.rl, -(ConfigCore.GUILD_NAME_CHANGE_COST));
-    				ogg.name = newGuildImage.name;	
-        			break; 
-    			}    			
-    		}
-    		case OPEN :{ ogg.open = newGuildImage.open; break; }
-    		case TAX: { ogg.tax = newGuildImage.tax; break;}
-    		default:
-    		}
-    	}
+    public static TranslatableResult<ResultType> setGuildName(UUID guildID, Agent exec, String newName) {
+    	if (!hasPermission(guildID, PermKey.CHANGE_NAME.rl, exec.refID))
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.update.failure.permission");
+    	if (LogicMoney.getBalance(guildID, LogicMoney.agentType(Type.GUILD)) < ConfigCore.GUILD_NAME_CHANGE_COST)
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.update.failure.funds");
+    	LogicMoney.changeBalance(guildID, LogicMoney.agentType(Type.GUILD), -ConfigCore.GUILD_NAME_CHANGE_COST);
+    	Guild ogg = getGuilds().get(guildID);
+    	ogg.name = newName;
+    	getGuilds().put(ogg.guildID, ogg);
+    	return service.setGuild(ogg);
+    }
+    
+    public static TranslatableResult<ResultType> setGuildOpen(UUID guildID, Agent exec, boolean openSetting) {
+    	if (!hasPermission(guildID, PermKey.SET_OPEN_TO_JOIN.rl, exec.refID))
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.update.failure.permission");
+    	Guild ogg = getGuilds().get(guildID);
+    	ogg.open = openSetting;
+    	getGuilds().put(ogg.guildID, ogg);
+    	return service.setGuild(ogg);
+    }
+    
+    public static TranslatableResult<ResultType> setGuildTax(UUID guildID, Agent exec, double newTax) {
+    	if (!hasPermission(guildID, PermKey.SET_TAX.rl, exec.refID))
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.update.failure.permission");
+    	Guild ogg = getGuilds().get(guildID);
+    	ogg.tax = newTax;
     	getGuilds().put(ogg.guildID, ogg);
     	return service.setGuild(ogg);
     }
 
-	public static TranslatableResult<ResultType> createGuild(String name, boolean isAdmin) {
+	public static TranslatableResult<ResultType> createGuild(Agent agent, String name, boolean isAdmin) {
 		UUID id = ComVars.unrepeatedUUIDs(getGuilds());
 		Guild newGuild = new Guild(name, id, isAdmin);
 		newGuild = service.addGuild(newGuild);
@@ -154,25 +161,45 @@ public class LogicGuilds {
 		return service.removeGuild(guildID);
 	}
 	
-	public static TranslatableResult<ResultType> addMember(UUID guildID, UUID playerID, int rank) {return updateMember(guildID, playerID, rank);}
+	public static TranslatableResult<ResultType> inviteMember(UUID guildID, Agent exec, Agent target) {
+		if (!hasPermission(guildID, PermKey.INVITE_MEMBERS.rl, exec.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.invite.failure.permission");
+		return addMember(guildID, target.refID, -1);
+	}
 	
-	public static TranslatableResult<ResultType> updateMember(UUID guildID, UUID playerID, int rank) {
-    	if (!getRanks(guildID).containsKey(rank)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.update.failure");
-    	else {
-    		getMembers(guildID).put(playerID, rank);
-    	}
+	public static TranslatableResult<ResultType> addMember(UUID guildID, UUID playerID, int rank) {
+		getMembers(guildID).put(playerID, rank);
+		return service.setMember(guildID, playerID, rank);
+	}
+	
+	public static TranslatableResult<ResultType> updateMember(UUID guildID, Agent exec, UUID playerID, int rank) {
+		if (!hasPermission(guildID, PermKey.SET_MEMBER_RANKS.rl, exec.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.setrank.failure.permission");
+		if (!getMembers(guildID).containsKey(playerID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
+		getMembers(guildID).put(playerID, rank);
     	return service.setMember(guildID, playerID, rank);
     }
 	
-	public static TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID) {
+	public static TranslatableResult<ResultType> removeMember(UUID guildID, Agent exec, UUID playerID) {
+		if (!hasPermission(guildID, PermKey.KICK_MEMBER.rl, exec.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure.permission");
     	if (getMembers(guildID).remove(playerID) != null) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.member.remove.success");   	
     	else return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
     }	
 	
-	public static TranslatableResult<ResultType> addPermission(RankPerms perm) { 
+	
+	private static TranslatableResult<ResultType> addPermission(RankPerms perm) { 
 		return setPermission(perm); }
+	
     
-	public static TranslatableResult<ResultType> setPermission(RankPerms perm) {
+	public static TranslatableResult<ResultType> changePermission(RankPerms perm, Agent exec, boolean isAddition) {
+		if (!hasPermission(perm.guildID, PermKey.MANAGE_PERMISSIONS.rl, exec.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure.permission");
+		return isAddition ? setPermission(perm) : removePermission(perm);
+	}
+	
+	private static TranslatableResult<ResultType> setPermission(RankPerms perm) {
     	List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
     	for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure");
@@ -182,7 +209,8 @@ public class LogicGuilds {
     	return service.setPermission(perm);
     }
 	
-	public static TranslatableResult<ResultType> removePermission(RankPerms perm) {
+	
+	private static TranslatableResult<ResultType> removePermission(RankPerms perm) {
 		List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
 		for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) {
@@ -192,6 +220,7 @@ public class LogicGuilds {
     	}
 		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.remove.failure");
 	}
+	
 	
 	public static boolean hasPermission(UUID guildID, String key, UUID player) {
 		int rank = getMembers(guildID).get(player);
@@ -203,25 +232,44 @@ public class LogicGuilds {
 		return false;
 	}
 	
-	public static TranslatableResult<ResultType> addRank(UUID guildID, String title) {
+	
+	public static TranslatableResult<ResultType> buyNewRank(UUID guildID, Agent exec, String title) {
+		if (!hasPermission(guildID, PermKey.BUY_NEW_RANK.rl, exec.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.rank.add.failure.permission");
+		if (LogicMoney.getBalance(guildID, LogicMoney.agentType(Type.GUILD)) < ConfigCore.GUILD_RANK_ADD_COST)
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.rank.add.failure.funds");
+		LogicMoney.changeBalance(guildID, LogicMoney.agentType(Type.GUILD), -ConfigCore.GUILD_RANK_ADD_COST);
+		return addRank(guildID, title);
+	}
+	
+	
+	private static TranslatableResult<ResultType> addRank(UUID guildID, String title) {
 		int rank = getBottomRank(guildID)+1;
     	getRanks(guildID).put(rank, title);
     	service.addRank(guildID, rank, title);
     	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.add.success");
     }
 	
-	public static TranslatableResult<ResultType> setRankTitle(UUID guildID, int rank, String newTitle) {
-		if (!getGuilds().containsKey(guildID)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
+	public static TranslatableResult<ResultType> setRankTitle(UUID guildID, Agent exec, int rank, String newTitle) {
+		if (!hasPermission(guildID, PermKey.RANK_TITLE_CHANGE.rl, exec.refID)) 
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure.permission");
 		if (!getRanks(guildID).containsKey(rank)) {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
 		if (LogicMoney.getBalance(guildID, LogicMoney.AccountType.GUILD.rl) < ConfigCore.GUILD_NAME_CHANGE_COST) {
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.failure");}
-		else {
-			LogicMoney.changeBalance(guildID, LogicMoney.AccountType.GUILD.rl, -(ConfigCore.GUILD_NAME_CHANGE_COST));
-		}
+		LogicMoney.changeBalance(guildID, LogicMoney.AccountType.GUILD.rl, -(ConfigCore.GUILD_NAME_CHANGE_COST));
 		getRanks(guildID).put(rank, newTitle);
 		service.setRankTitle(guildID, rank, newTitle);
     	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.rank.set.success");
     }
+	
+	public static TranslatableResult<ResultType> withdrawFromGuild(UUID guildID, Agent exec, double amount) {
+		if (!hasPermission(guildID, PermKey.ACCOUNT_WITHDRAW.rl, exec.refID)) 
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.withdraw.failure.permission");
+		return LogicMoney.transferFunds(guildID, LogicMoney.agentType(Type.GUILD), exec.refID, LogicMoney.agentType(exec.type), amount)
+				? new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.withdraw.success")
+				: new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.withdraw.failure");
+	}
+	
 	
 	public static int getBottomRank(UUID guildID) {
 		int sequence = 0;
@@ -232,6 +280,7 @@ public class LogicGuilds {
     	return sequence;
     }
 	
+	
 	public static int getMemberCount(UUID guildID) {
 		int count = 0;
 		for (Map.Entry<UUID, Integer> mbrs : MEMBERS.get(guildID).entrySet()) {
@@ -239,6 +288,7 @@ public class LogicGuilds {
 		}
 		return count;
 	}
+	
 	
 	public static void applyTaxes(Map<UUID, Duo<Integer, Double>> chunkCounts) {
 		//TODO change return type to allow for a stream of messages that can be sent to appropriate entities

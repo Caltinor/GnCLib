@@ -122,6 +122,8 @@ public interface ILogicRealEstate {
 		if (!getCap().get(ck).owner.refID.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.guildclaim.failure.occupied");
 		boolean bordersCore = bordersCoreLand(ck, guild.guildID);
+		if (!bordersCore && !LogicGuilds.hasPermission(guild.guildID, PermKey.OUTPOST_CREATE.rl, agent.refID))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.guildclaim.failure.permission");
 		//Verify funds available for transaction
 		double outpostFee = (bordersCore ? 0d : ConfigCore.OUTPOST_CREATE_COST);
 		double balG = LogicMoney.getBalance(guild.guildID, LogicMoney.agentType(Type.GUILD));
