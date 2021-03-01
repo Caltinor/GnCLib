@@ -1,5 +1,6 @@
 package dicemc.gnclib.guilds;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,8 @@ public class LogicGuilds {
     	MANAGE_PERMISSIONS(ComVars.MOD_ID+":manage_permissions"),
     	SET_MEMBER_RANKS(ComVars.MOD_ID+":set_member_ranks"),
     	INVITE_MEMBERS(ComVars.MOD_ID+":invite_members"),
-    	KICK_MEMBER(ComVars.MOD_ID+":kick_member");
+    	KICK_MEMBER(ComVars.MOD_ID+":kick_member"),
+    	SET_SHOP_TP(ComVars.MOD_ID+":set_shop_tp");
     	public final String rl;
 		PermKey(String resourceLocation) {rl = resourceLocation;}
     }
@@ -60,6 +62,8 @@ public class LogicGuilds {
 		service = setService(worldName);
 		GUILDS = service.getAllGuilds();
 	}
+	
+	public static void printTables() {((H2Impl)service).printAllTables();}
 	
 	private static IDBImplGuild setService(String worldName) {
 		switch (ConfigCore.DBService.getFromString()) {
@@ -140,13 +144,31 @@ public class LogicGuilds {
     	getGuilds().put(ogg.guildID, ogg);
     	return service.setGuild(ogg);
     }
+    
+    public static TranslatableResult<ResultType> setGuildShopLoc(UUID guildID, Agent exec, int x, int y, int z) {
+    	if (!hasPermission(guildID, PermKey.SET_SHOP_TP.rl, exec.refID))
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.update.failure.permission");
+    	Guild ogg = getGuilds().get(guildID);
+    	ogg.setTPLocation(x, y, z);
+    	getGuilds().put(ogg.guildID, ogg);
+    	return service.setGuild(ogg);
+    }
 
-	public static TranslatableResult<ResultType> createGuild(Agent agent, String name, boolean isAdmin) {
+    public static TranslatableResult<ResultType> playerCreateGuild(Agent agent, String name, boolean isAdmin) {
+    	if (!isAdmin && LogicMoney.getBalance(agent.refID, LogicMoney.agentType(agent.type)) < ConfigCore.GUILD_CREATE_COST)
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.create.failure.funds");
+    	LogicMoney.changeBalance(agent.refID, LogicMoney.agentType(agent.type), -ConfigCore.GUILD_CREATE_COST);
+    	return createGuild(agent, name, isAdmin);
+    }
+    
+    public static TranslatableResult<ResultType> createGuild(Agent agent, String name, boolean isAdmin) {		
 		UUID id = ComVars.unrepeatedUUIDs(getGuilds());
 		Guild newGuild = new Guild(name, id, isAdmin);
+		newGuild.isAdmin = isAdmin;
 		newGuild = service.addGuild(newGuild);
     	getGuilds().put(id, newGuild);
-    	LogicMoney.getBalance(id, ComVars.MOD_ID+":guild");
+    	LogicMoney.getBalance(id, LogicMoney.AccountType.GUILD.rl);
+    	LogicMoney.setBalance(newGuild.guildID, LogicMoney.agentType(Type.GUILD), ConfigCore.GUILD_STARTING_FUNDS);
     	RANKS.put(id, new HashMap<Integer, String>());
     	addRank(id, "Member");
     	for (PermKey perms : PermKey.values()) {addPermission(new RankPerms(id, perms.rl, ComVars.NIL, 0, true));}
@@ -181,11 +203,25 @@ public class LogicGuilds {
     	return service.setMember(guildID, playerID, rank);
     }
 	
-	public static TranslatableResult<ResultType> removeMember(UUID guildID, Agent exec, UUID playerID) {
+	public static TranslatableResult<ResultType> kickMember(UUID guildID, Agent exec, UUID playerID) {
 		if (!hasPermission(guildID, PermKey.KICK_MEMBER.rl, exec.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure.permission");
-    	if (getMembers(guildID).remove(playerID) != null) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.member.remove.success");   	
-    	else return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
+		return removeMember(guildID, playerID);
+	}
+	
+	public static TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID) {
+		//check if member is last in the guild to delete guild
+		if (getMembers(guildID).size() <= 1) {return service.removeGuild(guildID);}
+		if (getMembers(guildID).remove(playerID) == null) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
+		//check if not last member but last member of permission management rank, reduce permission management level
+		int permittedCount = 0;
+		int lowestRank = Integer.MAX_VALUE;
+		for (Map.Entry<UUID, Integer> mbrs : getMembers(guildID).entrySet()) {
+			if (hasPermission(guildID, PermKey.MANAGE_PERMISSIONS.rl, mbrs.getKey())) permittedCount++;
+			if (mbrs.getValue() < lowestRank) lowestRank = mbrs.getValue();
+		}
+		if (permittedCount == 0) {setPermission(new RankPerms(guildID, PermKey.MANAGE_PERMISSIONS.rl, lowestRank, true));}    	   	
+    	return service.removeMember(guildID, playerID);
     }	
 	
 	
@@ -289,9 +325,26 @@ public class LogicGuilds {
 		return count;
 	}
 	
+	public static List<Guild> getJoinableGuilds(UUID player) {
+		List<Guild> list = new ArrayList<Guild>();
+		for (Map.Entry<UUID, Guild> guilds : getGuilds().entrySet()) {
+			if (guilds.getValue().open) {
+				list.add(guilds.getValue());
+				continue;
+			}
+			else {
+				if (getMembers(guilds.getKey()).getOrDefault(player, -2) == -1) {
+					list.add(guilds.getValue());
+					continue;
+				}
+			}
+		}
+		return list;
+	}
 	
-	public static void applyTaxes(Map<UUID, Duo<Integer, Double>> chunkCounts) {
+	public static List<String> applyTaxes(Map<UUID, Duo<Integer, Double>> chunkCounts) {
 		//TODO change return type to allow for a stream of messages that can be sent to appropriate entities
+		List<String> outputStream = new ArrayList<String>();
 		for (Map.Entry<UUID, Map<UUID, Integer>> mbrs : MEMBERS.entrySet()) {
 			Guild guild = GUILDS.get(mbrs.getKey());
 			if (guild.tax == 0) continue;
@@ -348,7 +401,8 @@ public class LogicGuilds {
 				removeGuild(guilds.getKey());
 				//INSERT message that X guild has gone bankrupt.
 			}
-			//INSERT tax execution complete notice.
+			//INSERT tax execution complete notice.			
 		}
+		return outputStream;
 	}
 }

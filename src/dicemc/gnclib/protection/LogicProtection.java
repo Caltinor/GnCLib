@@ -384,8 +384,24 @@ public class LogicProtection {
 		}
 	}
 	
-	public static TranslatableResult<ResultType> onBonemealUseLogic() {
-		//TODO add bonemeal event logic
-		return null;
+	public static TranslatableResult<ResultType> onBonemealUseLogic(ChunkData data, UUID player, String item) {
+		if (data.owner.refID.equals(ComVars.NIL) && !ConfigCore.UNOWNED_PROTECTED) 
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.UNOWNED_PROTECTED && unownedWLBreakCheck(item)) 
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+		if (data.owner.refID.equals(ComVars.NIL) && ConfigCore.AUTO_TEMPCLAIM) 
+			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
+		switch (ownerMatch(player, data)) {
+		case DENY: {
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
+		}
+		case WHITELIST: {
+			if (!whitelistCheck(item, data, ActionType.BREAK)) {
+				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
+			}
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+		}
+		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
+		}
 	}
 }

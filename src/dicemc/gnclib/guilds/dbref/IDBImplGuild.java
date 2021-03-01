@@ -10,6 +10,11 @@ import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.util.TranslatableResult;
 
 public interface IDBImplGuild {	
+	public static enum tblGuilds {TABLE_NAME, ID, GUILD_ID, NAME, OPEN, ADMIN, TAX, TPX, TPY, TPZ, MARKET_SIZE}
+	public static enum tblMembers {TABLE_NAME, ID, PLAYER_ID, GUILD_ID, RANK}
+	public static enum tblRanks {TABLE_NAME, ID, GUILD_ID, TITLE, SEQUENCE}
+	public static enum tblPerms {TABLE_NAME, ID, GUILD_ID, PERM_KEY, PLAYER, RANK, CASCADES}
+	
 	Map<UUID, Guild> getAllGuilds();
 	/** Creates a new guild using the dat from the
 	 * provided guild.  Only the id is ignored.  

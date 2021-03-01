@@ -14,7 +14,6 @@ public class RankPerms implements IBufferable{
 	public int rank;
 	public boolean cascades;
 	
-	//TODO set up boolean for ranks with cascading permission
 	public RankPerms(int id, UUID guildID, String key, UUID player , int rank, boolean cascades) {
 		this.id = id;
 		this.guildID = guildID;
