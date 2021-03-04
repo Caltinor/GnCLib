@@ -14,4 +14,6 @@ public interface IDBImplMoney {
 	boolean transferFunds(UUID ownerFrom, String ownerFromType, UUID ownerTo, String ownerToType, double value);
 	
 	double addAccount(UUID owner, String ownerType);
+	
+	void deleteAccount(UUID owner, String ownerType);
 }

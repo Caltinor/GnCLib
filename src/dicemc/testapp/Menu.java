@@ -11,6 +11,8 @@ import java.util.Scanner;
 import java.util.UUID;
 
 import dicemc.gnclib.guilds.LogicGuilds;
+import dicemc.gnclib.guilds.entries.Guild;
+import dicemc.gnclib.guilds.entries.RankPerms;
 import dicemc.gnclib.money.LogicMoney;
 import dicemc.gnclib.trade.LogicTrade;
 import dicemc.gnclib.trade.dbref.IDBImplTrade;
@@ -35,6 +37,8 @@ public class Menu {
 	private static int rowIndex, rowCount;
 	private static DecimalFormat df = new DecimalFormat("###,###,###,##0.00");
 	private static UUID locality = UUID.randomUUID();
+	
+	private static List<Guild> openGuilds = new ArrayList<Guild>();
 
 	public static void main() {
 		boolean looping = true;
@@ -421,7 +425,212 @@ public class Menu {
 	}
 	
 	private static void guildMain() {
-		System.out.println("Guild Menu");
+		boolean looping = true;
+		while (looping) {
+			System.out.println("Guild Menu");
+			System.out.println("Please select a guild option: ");
+			System.out.println("0. Back");
+			boolean hasNoGuild = LogicGuilds.getGuildByMember(GnCLibConsole.testPlayer).equals(Guild.getDefault());
+			if (hasNoGuild) {
+				System.out.println("1. Create a guild");
+				System.out.println("2. view invites");
+				System.out.println("3. view all guilds");
+				System.out.println("4. Admin menu");
+				System.out.println("5. Print Tables");
+				switch (input.nextInt()) {
+				case 1: {
+					input.nextLine();
+					System.out.println("Enter the Guild's Name:");
+					String name = input.nextLine();
+					System.out.println(new Translation(
+							LogicGuilds.playerCreateGuild(new Agent(Type.PLAYER, GnCLibConsole.testPlayer, GnCLibConsole.testPlayerName), name, false)
+							.translationKey)
+							.print());
+					break;
+				}
+				case 2: {
+					openGuilds = LogicGuilds.getJoinableGuilds(GnCLibConsole.testPlayer);
+					System.out.println("======Open Guilds=========");
+					for (int i = 0; i< openGuilds.size(); i++) {
+						System.out.println(i +": "+ openGuilds.get(i).name);
+					}
+					System.out.println("==========================");
+					System.out.println("Join guild? -1=no, #=guild to Join");
+					int selection = input.nextInt();
+					if (selection >= 0 && selection < openGuilds.size()) {
+						Guild g = openGuilds.get(selection);
+						System.out.println(new Translation(
+								LogicGuilds.addMember(g.guildID, GnCLibConsole.testPlayer, LogicGuilds.getBottomRank(g.guildID))
+								.translationKey)
+								.print());
+					}
+					break;
+				}
+				case 3: {
+					Map<UUID, Guild> allGuilds = LogicGuilds.getGuilds();
+					System.out.println("======All Guilds=========");
+					for (Map.Entry<UUID, Guild> g : allGuilds.entrySet()) {
+						System.out.println(g.getValue().name);
+					}
+					System.out.println("=========================");
+					break;
+				}
+				case 4: {guildAdminMenu(); break;}
+				case 5: {LogicGuilds.printTables(); break;}
+				default: looping = false;}
+			}
+			//player has guild options
+			else {
+				Guild gRef = LogicGuilds.getGuildByMember(GnCLibConsole.testPlayer);
+				Agent agent = LogicTrade.get().getTransactor(GnCLibConsole.testPlayer, Type.PLAYER, GnCLibConsole.testPlayerName);
+				System.out.println("1. view all guilds");
+				System.out.println("2. view guild members");
+				System.out.println("3. invite member");
+				System.out.println("4. kick member");
+				System.out.println("5. open rank manager");
+				System.out.println("6. open perms manager");
+				System.out.println("7. open guild manager");
+				System.out.println("8. Print Tables");
+				switch (input.nextInt()) {
+				case 1: {
+					Map<UUID, Guild> allGuilds = LogicGuilds.getGuilds();
+					System.out.println("======All Guilds=========");
+					for (Map.Entry<UUID, Guild> g : allGuilds.entrySet()) {
+						System.out.println(g.getValue().name);
+					}
+					System.out.println("=========================");
+					break;
+				}
+				case 2: { 
+					Map<UUID, Integer> members = LogicGuilds.getMembers(gRef.guildID);
+					System.out.println("======Guild Members=========");
+					for (Map.Entry<UUID, Integer> m : members.entrySet()) {
+						String name = RunVars.playerMap.get(m.getKey());
+						String rank = LogicGuilds.getRanks(gRef.guildID).getOrDefault(m.getValue(), "Invited");
+						System.out.println(name +" : "+ rank);
+					}
+					System.out.println("============================");
+					break;
+				}
+				case 3: { 
+					input.nextLine();
+					System.out.println("Enter player name to Invite:");
+					String plyr = input.nextLine();
+					System.out.println(new Translation(
+							LogicGuilds.inviteMember(gRef.guildID, agent, LogicTrade.get().getTransactor(RunVars.getPlayerByName(plyr), Type.PLAYER, plyr))
+							.translationKey)
+							.print());
+					break;
+				}
+				case 4: { 
+					input.nextLine();
+					System.out.println("Enter name of member to kick");
+					String plyr = input.nextLine();
+					System.out.println(new Translation(
+							LogicGuilds.kickMember(gRef.guildID, agent, RunVars.getPlayerByName(plyr))
+							.translationKey)
+							.print());
+					break;
+				}
+				case 5: {ranksMgr(gRef.guildID, agent); break;}
+				case 6: {permsMgr(gRef.guildID, agent); break;}
+				case 7: {guildMgr(gRef.guildID, agent); break;}
+				case 8: {LogicGuilds.printTables(); break;}
+				default: looping = false;}
+			}
+		}
+	}
+	
+	private static void ranksMgr(UUID guildID, Agent exec) {
+		boolean looping = true;
+		while (looping) {
+			System.out.println("============Rank Manager===========");
+			//print ranks with membership underneath
+			int rank = 0;
+			while (LogicGuilds.getRanks(guildID).containsKey(rank)) {
+				System.out.println(rank+ ": "+LogicGuilds.getRanks(guildID).get(rank));
+				for (Map.Entry<UUID, Integer> mbr : LogicGuilds.getMembers(guildID).entrySet()) {
+					if (mbr.getValue() == rank) System.out.println("     -"+RunVars.playerMap.get(mbr.getKey()));
+				}
+				rank++;
+			}			
+			System.out.println("Select an option:");
+			System.out.println("0. Back");
+			System.out.println("1. Buy Rank");
+			System.out.println("2. Rename Rank");
+			System.out.println("3. Assign Member to Rank");
+			switch (input.nextInt()) {
+			case 1: {
+				input.nextLine();
+				System.out.println("Enter new Rank Title:");
+				String title = input.nextLine();
+				System.out.println(new Translation(
+						LogicGuilds.buyNewRank(guildID, exec, title)
+						.translationKey)
+						.print());				
+				break;
+			}
+			case 2: {
+				System.out.println("Enter number of rank to be renamed:");
+				int selectedRank = input.nextInt();
+				input.nextLine();
+				System.out.println("Enter rank's new title");
+				String title = input.nextLine();
+				System.out.println(new Translation(
+						LogicGuilds.setRankTitle(guildID, exec, selectedRank, title)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 3: {
+				System.out.println("Enter number of rank to be assigned to:");
+				int selectedRank = input.nextInt();
+				input.nextLine();
+				System.out.println("Enter name of member to be reassigned:");
+				UUID tgt = RunVars.getPlayerByName(input.nextLine());
+				System.out.println(new Translation(
+						LogicGuilds.updateMember(guildID, exec, tgt, selectedRank)
+						.translationKey)
+						.print());
+				break;
+			}
+			default: looping = false;}
+		}
+	}
+	
+	private static void permsMgr(UUID guildID, Agent exec) {
+		boolean looping = true;
+		while (looping) {
+			System.out.println("============Permission Manager===========");
+			for (Map.Entry<String, List<RankPerms>> perms : LogicGuilds.getPerms(guildID).entrySet()) {
+				List<RankPerms> members = new ArrayList<RankPerms>();
+				List<RankPerms> groups = new ArrayList<RankPerms>();
+				for (int i = 0; i < perms.getValue().size(); i++) {
+					if (perms.getValue().get(i).rank == -2) members.add(perms.getValue().get(i));
+					else groups.add(perms.getValue().get(i));
+				}
+				System.out.println(perms.getKey());
+				System.out.println("==Applicable Groups==");
+				for (int i = 0; i < groups.size(); i++) {
+					System.out.println("    "+LogicGuilds.getRanks(guildID).get(groups.get(i).rank));}
+				System.out.println("==Applicable Members==");
+				for (int i = 0; i < members.size(); i++) {
+					System.out.println("    "+RunVars.playerMap.get(members.get(i).player));}
+				System.out.println("");
+			}
+			looping = false;
+		}
+	}
+	
+	private static void guildMgr(UUID guildID, Agent exec) {
+		boolean looping = true;
+		while (looping) {
+			looping = false;
+		}
+	}
+	
+	private static void guildAdminMenu() {
+		
 	}
 	
 	private static void accountMain() {

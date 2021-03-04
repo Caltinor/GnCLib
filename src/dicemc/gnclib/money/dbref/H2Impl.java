@@ -169,4 +169,18 @@ public class H2Impl implements IDBImplMoney, IDatabase{
 		return map;
 	}
 
+	@Override
+	public void deleteAccount(UUID owner, String ownerType) {
+		PreparedStatement st = null;
+		String sql = "DELETE FROM " +map_Money.get(tblMoney.TABLE_NAME)+ " WHERE "+
+				map_Money.get(tblMoney.OWNER) +" =? AND "+
+				map_Money.get(tblMoney.TYPE)  +" =?;";
+		try {
+			st = con.prepareStatement(sql);
+			st.setObject(1, owner);
+			st.setString(2, ownerType);
+			executeUPDATE(st);
+		} catch(SQLException e) {e.printStackTrace();}
+	}
+
 }

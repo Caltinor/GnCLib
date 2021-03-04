@@ -46,6 +46,7 @@ lib.realestate.abandon.failure.permission=Player not authorized to abandon claim
 lib.guild.create.success=Guild Created
 lib.guild.create.failure=Guild Name Taken
 lib.guild.create.failure.funds=Insufficient funds to create guild
+lib.guild.create.failure.inguild=Player is already a member of a guild
 lib.guild.delete.success=Guild Removed.
 lib.guild.delete.failure=Guild could not be removed.
 lib.guild.member.add.success=Player added to guild

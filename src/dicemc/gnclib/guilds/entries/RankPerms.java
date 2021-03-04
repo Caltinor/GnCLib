@@ -26,7 +26,7 @@ public class RankPerms implements IBufferable{
 		this(0, guildID, key, player, rank, cascades);
 	}	
 	public RankPerms(UUID guildID, String key, UUID player) {
-		this(0, guildID, key, player, -1, false);
+		this(0, guildID, key, player, -2, false);
 	}
 	public RankPerms(UUID guildID, String key, int rank, boolean cascades) {
 		this(0, guildID, key, ComVars.NIL, rank, cascades);

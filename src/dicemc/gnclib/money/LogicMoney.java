@@ -60,6 +60,10 @@ public class LogicMoney {
 		return service.transferFunds(ownerFrom, ownerFromType, ownerTo, ownerToType, value);
 	}
 	
+	public static void deleteAccount(UUID owner, String resourceLocation) {
+		service.deleteAccount(owner, resourceLocation);
+	}
+	
 	public static String agentType(Agent.Type type) {
 		switch (type) {
 		case NONE: {break;}

@@ -110,7 +110,7 @@ public class LogicGuilds {
     
     public static Guild getGuildByMember(UUID playerID) {
 		for (Map.Entry<UUID, Guild> guilds : getGuilds().entrySet()) {
-			if (getMembers(guilds.getKey()).getOrDefault(playerID, Integer.MAX_VALUE) != Integer.MAX_VALUE) return guilds.getValue();
+			if (getMembers(guilds.getKey()).getOrDefault(playerID, -1) >= 0) return guilds.getValue();
 		}		
 		return Guild.getDefault();
     }
@@ -161,7 +161,9 @@ public class LogicGuilds {
     	return createGuild(agent, name, isAdmin);
     }
     
-    public static TranslatableResult<ResultType> createGuild(Agent agent, String name, boolean isAdmin) {		
+    public static TranslatableResult<ResultType> createGuild(Agent agent, String name, boolean isAdmin) {	
+    	if (!getGuildByMember(agent.refID).equals(Guild.getDefault()))
+    		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.create.failure.inguild");
 		UUID id = ComVars.unrepeatedUUIDs(getGuilds());
 		Guild newGuild = new Guild(name, id, isAdmin);
 		newGuild.isAdmin = isAdmin;
@@ -172,6 +174,7 @@ public class LogicGuilds {
     	RANKS.put(id, new HashMap<Integer, String>());
     	addRank(id, "Member");
     	for (PermKey perms : PermKey.values()) {addPermission(new RankPerms(id, perms.rl, ComVars.NIL, 0, true));}
+    	addMember(id, agent.refID, 0);
     	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.create.success");
 	}
 	
@@ -180,6 +183,7 @@ public class LogicGuilds {
 		MEMBERS.remove(guildID);
 		RANKS.remove(guildID);
 		PERMS.remove(guildID);
+		LogicMoney.deleteAccount(guildID, LogicMoney.AccountType.GUILD.rl);
 		return service.removeGuild(guildID);
 	}
 	
@@ -211,7 +215,7 @@ public class LogicGuilds {
 	
 	public static TranslatableResult<ResultType> removeMember(UUID guildID, UUID playerID) {
 		//check if member is last in the guild to delete guild
-		if (getMembers(guildID).size() <= 1) {return service.removeGuild(guildID);}
+		if (nonInviteMemberCount(guildID) <= 1 && getMembers(guildID).get(playerID) >= 0) {return service.removeGuild(guildID);}
 		if (getMembers(guildID).remove(playerID) == null) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.member.remove.failure");
 		//check if not last member but last member of permission management rank, reduce permission management level
 		int permittedCount = 0;
@@ -224,11 +228,9 @@ public class LogicGuilds {
     	return service.removeMember(guildID, playerID);
     }	
 	
-	
 	private static TranslatableResult<ResultType> addPermission(RankPerms perm) { 
 		return setPermission(perm); }
-	
-    
+	  
 	public static TranslatableResult<ResultType> changePermission(RankPerms perm, Agent exec, boolean isAddition) {
 		if (!hasPermission(perm.guildID, PermKey.MANAGE_PERMISSIONS.rl, exec.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure.permission");
@@ -244,9 +246,9 @@ public class LogicGuilds {
     	getPerms(perm.guildID).put(perm.key, list);
     	return service.setPermission(perm);
     }
-	
-	
+		
 	private static TranslatableResult<ResultType> removePermission(RankPerms perm) {
+		//TODO add removal if cascading removal
 		List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
 		for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) {
@@ -256,19 +258,20 @@ public class LogicGuilds {
     	}
 		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.remove.failure");
 	}
-	
-	
+		
 	public static boolean hasPermission(UUID guildID, String key, UUID player) {
 		int rank = getMembers(guildID).get(player);
 		List<RankPerms> list = getPerms(guildID).get(key);
 		for (int i = 0; i < list.size(); i++) {
-			if (list.get(i).player.equals(player) || list.get(i).rank == rank || 
-					(list.get(i).rank < rank && list.get(i).cascades)) return true;
+			if (list.get(i).player.equals(player) || list.get(i).rank == rank ||
+					(rank < list.get(i).rank && list.get(i).cascades)) return true;
 		}
+		/* TODO note to self when redsigning the perms gui.  cascades should highlight or display
+		 * in some way to the user so that it is apparent the permission affects all lower ranks.
+		 */
 		return false;
 	}
-	
-	
+		
 	public static TranslatableResult<ResultType> buyNewRank(UUID guildID, Agent exec, String title) {
 		if (!hasPermission(guildID, PermKey.BUY_NEW_RANK.rl, exec.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.rank.add.failure.permission");
@@ -277,8 +280,7 @@ public class LogicGuilds {
 		LogicMoney.changeBalance(guildID, LogicMoney.agentType(Type.GUILD), -ConfigCore.GUILD_RANK_ADD_COST);
 		return addRank(guildID, title);
 	}
-	
-	
+		
 	private static TranslatableResult<ResultType> addRank(UUID guildID, String title) {
 		int rank = getBottomRank(guildID)+1;
     	getRanks(guildID).put(rank, title);
@@ -306,7 +308,6 @@ public class LogicGuilds {
 				: new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.withdraw.failure");
 	}
 	
-	
 	public static int getBottomRank(UUID guildID) {
 		int sequence = 0;
 		while (sequence >= 0) {
@@ -315,8 +316,7 @@ public class LogicGuilds {
 		}
     	return sequence;
     }
-	
-	
+		
 	public static int getMemberCount(UUID guildID) {
 		int count = 0;
 		for (Map.Entry<UUID, Integer> mbrs : MEMBERS.get(guildID).entrySet()) {
@@ -340,6 +340,14 @@ public class LogicGuilds {
 			}
 		}
 		return list;
+	}
+	
+	public static int nonInviteMemberCount(UUID guildID) {
+		int count = 0;
+		for (Map.Entry<UUID, Integer> mbrs : getMembers(guildID).entrySet()) {
+			if (mbrs.getValue() >= 0) count++;
+		}
+		return count;
 	}
 	
 	public static List<String> applyTaxes(Map<UUID, Duo<Integer, Double>> chunkCounts) {

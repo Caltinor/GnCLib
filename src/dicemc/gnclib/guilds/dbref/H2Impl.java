@@ -75,7 +75,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 				"PRIMARY KEY ("+ map_Members.get(tblMembers.ID) +"), " +
 				"FOREIGN KEY ("+ map_Members.get(tblMembers.GUILD_ID) + 
 				") REFERENCES "+ map_Guilds.get(tblGuilds.TABLE_NAME)+"("+map_Guilds.get(tblGuilds.GUILD_ID)+
-				") ON DELETE CASCADES);";
+				") ON DELETE CASCADE);";
 		map.put(map_Members.get(tblMembers.TABLE_NAME), sql);
 		sql = " (" + map_Ranks.get(tblRanks.ID) 		+" INT NOT NULL AUTO_INCREMENT, " +
 				map_Ranks.get(tblRanks.GUILD_ID)		+" UUID NOT NULL, " +
@@ -84,7 +84,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 				"PRIMARY KEY ("+ map_Ranks.get(tblRanks.ID) +"), " +
 				"FOREIGN KEY ("+ map_Ranks.get(tblRanks.GUILD_ID) +
 				") REFERENCES "+ map_Guilds.get(tblGuilds.TABLE_NAME)+"("+map_Guilds.get(tblGuilds.GUILD_ID) +
-				") ON DELETE CASCADES);";
+				") ON DELETE CASCADE);";
 		map.put(map_Ranks.get(tblRanks.TABLE_NAME), sql);
 		sql = " (" + map_Perms.get(tblPerms.ID) 		+" INT NOT NULL AUTO_INCREMENT, " +
 				map_Perms.get(tblPerms.GUILD_ID)		+" UUID NOT NULL, " +
@@ -95,7 +95,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 				"PRIMARY KEY ("+ map_Perms.get(tblPerms.ID) +"), " +
 				"FOREIGN KEY ("+ map_Perms.get(tblPerms.GUILD_ID) +
 				") REFERENCES "+ map_Guilds.get(tblGuilds.TABLE_NAME)+"("+map_Guilds.get(tblGuilds.GUILD_ID) +
-				") ON DELETE CASCADES);";
+				") ON DELETE CASCADE);";
 		map.put(map_Perms.get(tblPerms.TABLE_NAME), sql);
 		return map;
 	}
@@ -366,7 +366,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 		String sql = "INSERT INTO " +map_Ranks.get(tblRanks.TABLE_NAME) +" ("+
 				map_Ranks.get(tblRanks.GUILD_ID)+", "+
 				map_Ranks.get(tblRanks.TITLE) 	+", "+
-				map_Ranks.get(tblRanks.SEQUENCE)+", "+
+				map_Ranks.get(tblRanks.SEQUENCE)+
 				") VALUES (?, ?, ?);";
 		try {
 			st = con.prepareStatement(sql);
@@ -382,7 +382,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 	public TranslatableResult<ResultType> setRankTitle(UUID guildID, int rank, String title) {
 		PreparedStatement st = null;
 		String sql = "UPDATE " +map_Ranks.get(tblRanks.TABLE_NAME)+" SET "+
-				map_Ranks.get(tblRanks.TITLE)+" =? WHERE" +
+				map_Ranks.get(tblRanks.TITLE)+" =? WHERE " +
 				map_Ranks.get(tblRanks.GUILD_ID) +" =? AND "+
 				map_Ranks.get(tblRanks.SEQUENCE) +" =?;";
 		try {
@@ -427,7 +427,7 @@ public class H2Impl implements IDBImplGuild, IDatabase{
 				map_Perms.get(tblPerms.PERM_KEY) 	+", "+
 				map_Perms.get(tblPerms.PLAYER) 		+", "+
 				map_Perms.get(tblPerms.RANK)  		+", "+
-				map_Perms.get(tblPerms.CASCADES) 	+", "+
+				map_Perms.get(tblPerms.CASCADES)+
 				") VALUES (?, ?, ?, ?, ?)";
 		try {
 			st = con.prepareStatement(sql);
