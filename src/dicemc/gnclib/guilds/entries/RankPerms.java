@@ -33,7 +33,7 @@ public class RankPerms implements IBufferable{
 	}
 	
 	public boolean matches(RankPerms other) {
-		return guildID == other.guildID && player == other.player && key == other.key && rank == other.rank;
+		return guildID.equals(other.guildID) && player.equals(other.player) && key.equalsIgnoreCase(other.key) && rank == other.rank;
 	}
 	
 	@Override

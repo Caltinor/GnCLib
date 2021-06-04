@@ -173,7 +173,7 @@ public class LogicGuilds {
     	LogicMoney.setBalance(newGuild.guildID, LogicMoney.agentType(Type.GUILD), ConfigCore.GUILD_STARTING_FUNDS);
     	RANKS.put(id, new HashMap<Integer, String>());
     	addRank(id, "Member");
-    	for (PermKey perms : PermKey.values()) {addPermission(new RankPerms(id, perms.rl, ComVars.NIL, 0, true));}
+    	for (PermKey perms : PermKey.values()) {setPermission(new RankPerms(id, perms.rl, ComVars.NIL, 0, true));}
     	addMember(id, agent.refID, 0);
     	return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.guild.create.success");
 	}
@@ -227,9 +227,6 @@ public class LogicGuilds {
 		if (permittedCount == 0) {setPermission(new RankPerms(guildID, PermKey.MANAGE_PERMISSIONS.rl, lowestRank, true));}    	   	
     	return service.removeMember(guildID, playerID);
     }	
-	
-	private static TranslatableResult<ResultType> addPermission(RankPerms perm) { 
-		return setPermission(perm); }
 	  
 	public static TranslatableResult<ResultType> changePermission(RankPerms perm, Agent exec, boolean isAddition) {
 		if (!hasPermission(perm.guildID, PermKey.MANAGE_PERMISSIONS.rl, exec.refID))
@@ -238,6 +235,10 @@ public class LogicGuilds {
 	}
 	
 	private static TranslatableResult<ResultType> setPermission(RankPerms perm) {
+		if (!perm.player.equals(ComVars.NIL) && getMembers(perm.guildID).getOrDefault(perm.player, -1) < 0)
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure.member");
+		if (perm.rank != -2 && !getRanks(perm.guildID).containsKey(perm.rank))
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure.rank");
     	List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
     	for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.set.failure");
@@ -248,25 +249,31 @@ public class LogicGuilds {
     }
 		
 	private static TranslatableResult<ResultType> removePermission(RankPerms perm) {
-		//TODO add removal if cascading removal
 		List<RankPerms> list = getPerms(perm.guildID).get(perm.key);
 		for (int i = 0; i < list.size(); i++) {
     		if (list.get(i).matches(perm)) {
-    			getPerms(perm.guildID).get(perm.key).remove(i); 
+    			getPerms(perm.guildID).get(perm.key).remove(i);
+    			//checks if this was the last permission and adds in 
+    			//a default permission for rank zero if true
+    			if (list.size() == 0) {
+    				RankPerms defaultPerm = new RankPerms(perm.guildID, perm.key, 0, true);
+    				setPermission(defaultPerm);
+    			}
     			return service.removePermission(perm);
-    		} 
+    		}
     	}
 		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.guild.permission.remove.failure");
 	}
 		
 	public static boolean hasPermission(UUID guildID, String key, UUID player) {
 		int rank = getMembers(guildID).get(player);
+		if (rank < 0 ) return false;
 		List<RankPerms> list = getPerms(guildID).get(key);
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i).player.equals(player) || list.get(i).rank == rank ||
 					(rank < list.get(i).rank && list.get(i).cascades)) return true;
 		}
-		/* TODO note to self when redsigning the perms gui.  cascades should highlight or display
+		/* note to self when redsigning the perms gui.  cascades should highlight or display
 		 * in some way to the user so that it is apparent the permission affects all lower ranks.
 		 */
 		return false;

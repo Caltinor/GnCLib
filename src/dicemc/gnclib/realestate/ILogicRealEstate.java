@@ -92,7 +92,12 @@ public interface ILogicRealEstate {
 	 */
 	public void saveChunkData();
 	
-	//BEGIN GAME LOGIC SECTION
+	public default void loadChunkData(ChunkPos3D pos) {
+		if (getCap().containsKey(pos)) return;
+		getCap().put(pos, new ChunkData(pos));
+	}
+	
+	//BEGIN GAME LOGIC SECTION	
 	public default TranslatableResult<ResultType> tempClaim(ChunkPos3D ck, Agent agent) {
 		if (!getCap().get(ck).owner.refID.equals(ComVars.NIL) || !getCap().get(ck).renter.refID.equals(ComVars.NIL)) 
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.tempclaim.failure.occupied");

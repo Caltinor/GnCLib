@@ -65,6 +65,7 @@ public class LogicTrade implements IDBImplTrade{
 	 */
 	@Override
 	public TranslatableResult<ResultType> createTransaction(IMarketEntry entry, MarketType type) {
+		//TODO check local markets for capacity limits
 		entry.setVendor(service.getTransactor(entry.getVendor().refID, entry.getVendor().type, entry.getVendor().name));
 		switch (type) {
 		case LOCAL: {

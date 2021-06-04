@@ -610,22 +610,139 @@ public class Menu {
 					else groups.add(perms.getValue().get(i));
 				}
 				System.out.println(perms.getKey());
-				System.out.println("==Applicable Groups==");
 				for (int i = 0; i < groups.size(); i++) {
-					System.out.println("    "+LogicGuilds.getRanks(guildID).get(groups.get(i).rank));}
-				System.out.println("==Applicable Members==");
+					System.out.println("    "+LogicGuilds.getRanks(guildID).get(groups.get(i).rank)+ "[CASCADES:"+groups.get(i).cascades+"]");}
 				for (int i = 0; i < members.size(); i++) {
 					System.out.println("    "+RunVars.playerMap.get(members.get(i).player));}
 				System.out.println("");
 			}
-			looping = false;
+			System.out.println("Please select an option below:");
+			System.out.println("0. Back");
+			System.out.println("1. Add Player Perm");
+			System.out.println("2. Add Rank Perm");
+			System.out.println("3. Remove Player Perm");
+			System.out.println("4. Remove Rank Perm");
+			switch (input.nextInt()) {
+			case 1: {
+				input.nextLine();
+				System.out.println("Enter perm key:  (verbatim from above)");
+				String key = input.nextLine();
+				System.out.println("Enter player name to be permitted");
+				String name = input.nextLine();
+				RankPerms perm = new RankPerms(guildID, key, RunVars.getPlayerByName(name));
+				System.out.println(new Translation(
+						LogicGuilds.changePermission(perm, exec, true)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 2: {
+				input.nextLine();
+				System.out.println("Enter perm key:  (verbatim from above)");
+				String key = input.nextLine();
+				System.out.println("Enter rank number to be permitted");
+				int rank = input.nextInt();
+				input.nextLine();
+				System.out.println("Should this permission cascade? ['yes' or 'no] (eg. all ranks below it also are permitted)");
+				boolean cascades = input.nextLine().equalsIgnoreCase("yes");
+				RankPerms perm = new RankPerms(guildID, key, rank, cascades);
+				System.out.println(new Translation(
+						LogicGuilds.changePermission(perm, exec, true)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 3: {
+				input.nextLine();
+				System.out.println("Enter perm key:  (verbatim from above)");
+				String key = input.nextLine();
+				System.out.println("Enter player name to be removed");
+				String name = input.nextLine();
+				RankPerms perm = new RankPerms(guildID, key, RunVars.getPlayerByName(name));
+				System.out.println(new Translation(
+						LogicGuilds.changePermission(perm, exec, false)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 4: {
+				input.nextLine();
+				System.out.println("Enter perm key:  (verbatim from above)");
+				String key = input.nextLine();
+				System.out.println("Enter rank number to be removed");
+				int rank = input.nextInt();
+				RankPerms perm = new RankPerms(guildID, key, rank, true);
+				System.out.println(new Translation(
+						LogicGuilds.changePermission(perm, exec, false)
+						.translationKey)
+						.print());
+				break;
+			}
+			default: looping = false;}
 		}
 	}
 	
 	private static void guildMgr(UUID guildID, Agent exec) {
+		DecimalFormat df = new DecimalFormat("0.000");
 		boolean looping = true;
 		while (looping) {
-			looping = false;
+			Guild guild = LogicGuilds.getGuildByID(guildID);
+			System.out.println("============Guild Manager===========");
+			System.out.println("<< "+guild.name+" >> "+ (guild.isAdmin ? "[ADMIN]": ""));
+			System.out.println("Join Status: "+ (guild.open ? "Open" : "Invite Only"));
+			System.out.println(" Member Tax: "+df.format(guild.tax*100)+"%");
+			System.out.println("Market Size: "+guild.getMarketSize());
+			System.out.println("Market TP Location: ["+guild.getTPX()+", "+guild.getTPY()+", "+guild.getTPZ()+"]");
+			System.out.println("====================================");
+			System.out.println("Selct an option:");
+			System.out.println("0. back");
+			System.out.println("1. change guild name");
+			System.out.println("2. change member tax");
+			System.out.println("3. toggle join status");
+			System.out.println("4. change market TP location");
+			switch (input.nextInt()) {
+			case 1: {
+				input.nextLine();
+				System.out.println("Enter new name");
+				String newName = input.nextLine();
+				System.out.println(new Translation(
+						LogicGuilds.setGuildName(guildID, exec, newName)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 2: {
+				input.nextLine();
+				System.out.println("Enter new tax rate: (in decimal format)");
+				double newTax = input.nextDouble();
+				System.out.println(new Translation(
+						LogicGuilds.setGuildTax(guildID, exec, newTax)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 3: {
+				System.out.println(new Translation(
+						LogicGuilds.setGuildOpen(guildID, exec, !guild.open)
+						.translationKey)
+						.print());
+				break;
+			}
+			case 4: {
+				input.nextLine();
+				System.out.println("Enter TP X:");
+				int newTPx = input.nextInt();
+				System.out.println("Enter TP Y:");
+				int newTPy = input.nextInt();
+				System.out.println("Enter TP Z:");
+				int newTPz = input.nextInt();
+				System.out.println(new Translation(
+						LogicGuilds.setGuildShopLoc(guildID, exec, newTPx, newTPy, newTPz)
+						.translationKey)
+						.print());
+				break;
+			}
+			default: looping = false;}
 		}
 	}
 	

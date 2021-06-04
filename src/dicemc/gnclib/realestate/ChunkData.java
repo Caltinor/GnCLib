@@ -28,12 +28,14 @@ public class ChunkData implements IBufferable{
 	public List<Agent> permittedPlayers = new ArrayList<Agent>();
 	
 	public ChunkData(ChunkPos3D pos) {this.pos = pos;}
+	
+	public static ChunkData getPlaceholder() {return new ChunkData(new ChunkPos3D(0,0,0));}
 
 	@Override
 	public ByteBuf writeBytes(ByteBuf buf) {
-		buf = pos.writeBytes(buf);
-		buf = owner.writeBytes(buf);
-		buf = renter.writeBytes(buf);
+		buf.writeBytes(pos.writeBytes(buf));
+		buf.writeBytes(owner.writeBytes(buf));
+		buf.writeBytes(renter.writeBytes(buf));
 		buf.writeDouble(price);
 		buf.writeDouble(leasePrice);
 		buf.writeInt(leaseDuration);
@@ -46,11 +48,11 @@ public class ChunkData implements IBufferable{
 		for (Map.Entry<String, WhitelistEntry> map : whitelist.entrySet()) {
 			buf.writeInt(map.getKey().length());
 			buf.writeCharSequence(map.getKey(), Charset.defaultCharset());
-			buf = map.getValue().writeBytes(buf);
+			buf.writeBytes(map.getValue().writeBytes(buf));
 		}
 		buf.writeInt(permittedPlayers.size());
-		for (Agent players : permittedPlayers) {
-			buf = players.writeBytes(buf);
+		for (int i = 0; i < permittedPlayers.size(); i++) {
+			buf.writeBytes(permittedPlayers.get(i).writeBytes(buf));
 		}
 		return buf;
 	}

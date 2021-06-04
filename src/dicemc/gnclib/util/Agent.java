@@ -40,4 +40,13 @@ public class Agent implements IBufferable{
 		len = buf.readInt();
 		name = buf.readCharSequence(len, Charset.defaultCharset()).toString();
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Agent) {
+			Agent that = (Agent) o;
+			return this.type == that.type && this.refID.equals(that.refID);
+		}
+		return false; 
+	}
 }

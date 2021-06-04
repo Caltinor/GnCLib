@@ -124,30 +124,35 @@ public class LogicProtection {
 	}
 	
 	public static enum WhitelisterType {NOT_WHITELISTER, DEFAULT, GREEN_STICK, RED_STICK}	
-	public static TranslatableResult<ResultType> isWhitelisterAction(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
+	//TODO This needs a rework to separate itemstacks from items 
+	public static TranslatableResult<ResultType> isWhitelisterAction(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister itemIn, Object stackIn, boolean isLeftClick, boolean isSneaking) {
+		//Checks to make sure the dependent application pass real values
+		if (itemIn == null) return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+		if (stackIn == null) return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+		
 		switch (type) {
 		case NOT_WHITELISTER: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");} 
 		case DEFAULT: {
 			if (isLeftClick) {
 				if (isSneaking) {
-					((IDefaultWhitelister)stack).setWhitelister(stack, data.whitelist);
+					((IDefaultWhitelister)itemIn).setWhitelister(stackIn, data.whitelist);
 					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 				else {//not sneaking
-					((IDefaultWhitelister)stack).addToWhitelister(stack, item, WhitelistEntry.UpdateType.BREAK);
+					((IDefaultWhitelister)itemIn).addToWhitelister(stackIn, item, WhitelistEntry.UpdateType.BREAK);
 					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 			}
 			else {//is right click
 				if (isSneaking && !data.owner.refID.equals(ComVars.NIL)) {
 					if (!isSubletPermitted(data, player)) {
-						data.whitelist = ((IDefaultWhitelister)stack).getWhitelist(stack);
+						data.whitelist = ((IDefaultWhitelister)itemIn).getWhitelist(stackIn);
 						return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.wlapply");
 					}
 					else {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.wlapply.deny");}
 				}
 				else {//not sneaking
-					((IDefaultWhitelister)stack).addToWhitelister(stack, item, WhitelistEntry.UpdateType.INTERACT);
+					((IDefaultWhitelister)itemIn).addToWhitelister(stackIn, item, WhitelistEntry.UpdateType.INTERACT);
 					return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 				}
 			}
@@ -187,7 +192,7 @@ public class LogicProtection {
 	 * @param player the player being checked for
 	 * @return true if the player is sublet permitted by their guild.
 	 */
-	private static boolean isSubletPermitted(ChunkData data, UUID player) {
+	public static boolean isSubletPermitted(ChunkData data, UUID player) {
 		return LogicGuilds.hasPermission(data.owner.refID, PermKey.SUBLET_MANAGE.rl, player);
 	}
 	
@@ -237,8 +242,8 @@ public class LogicProtection {
 		}
 	}
 	
-	public static TranslatableResult<ResultType> onBlockLeftClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
-		return isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking);
+	public static TranslatableResult<ResultType> onBlockLeftClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister itemIn, Object stackIn, boolean isLeftClick, boolean isSneaking) {
+		return isWhitelisterAction(data, player, item, type, itemIn, stackIn, isLeftClick, isSneaking);
 	}
 	
 	/**CALL ONLY ON THE SERVER SIDE OF THE EVENT
@@ -255,9 +260,9 @@ public class LogicProtection {
 	 * @param guildImpl
 	 * @return the appropriate action as a result of this method.  true/false for the event cancellation status or packet if one should be sent to the client
 	 */
-	public static TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
+	public static TranslatableResult<ResultType> onBlockRightClickLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister itemIn, Object stackIn, boolean isLeftClick, boolean isSneaking) {
 		//Whitelister interact toggle
-		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking);
+		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, itemIn, stackIn, isLeftClick, isSneaking);
 		if (result.result.equals(ResultType.SUCCESS)) {return result;}
 		//normal protection checks
 		switch (ownerMatch(player, data)) {
@@ -301,8 +306,8 @@ public class LogicProtection {
 	}
 	
 	//Check if player is exempt before calling this method
-	public static TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister stack, boolean isLeftClick, boolean isSneaking) {
-		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, stack, isLeftClick, isSneaking);
+	public static TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister itemIn, Object stackIn, boolean isLeftClick, boolean isSneaking) {
+		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, itemIn, stackIn, isLeftClick, isSneaking);
 		if (result.result.equals(ResultType.SUCCESS)) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {

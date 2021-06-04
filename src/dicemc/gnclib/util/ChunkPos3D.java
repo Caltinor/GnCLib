@@ -4,7 +4,6 @@ import io.netty.buffer.ByteBuf;
 
 public class ChunkPos3D implements IBufferable{
 	public int x, y, z;
-	private static int floorLevel = 0;
 	private static final int xSize = 1 + doMath(smallestPower(30000000));
 	private static final int zSize = xSize;
 	private static final int ySize = 64 - xSize - zSize;
@@ -33,9 +32,7 @@ public class ChunkPos3D implements IBufferable{
 	    return i | ((long)z & zComp) << zInverseStart;
 	}
 	
-	public static void setFloorLevel(int level) {floorLevel = level;}
-	
-	public static int chunkYFromAltitude(int altitude) {return (altitude - floorLevel)/16;}
+	public static int chunkYFromAltitude(int altitude, int floorLevel) {return (altitude - floorLevel)/16;}
 	
 	private static int doMath(int value) {
 		boolean powerOfTwo = true;
