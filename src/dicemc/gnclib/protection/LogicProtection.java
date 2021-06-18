@@ -305,7 +305,9 @@ public class LogicProtection {
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 	}
 	
-	//Check if player is exempt before calling this method
+	/*Check if player is exempt before calling this method
+	 *	- Should only be called serverside
+	 */
 	public static TranslatableResult<ResultType> onEntityInteractLogic(ChunkData data, UUID player, String item, WhitelisterType type, IWhitelister itemIn, Object stackIn, boolean isLeftClick, boolean isSneaking) {
 		TranslatableResult<ResultType> result = isWhitelisterAction(data, player, item, type, itemIn, stackIn, isLeftClick, isSneaking);
 		if (result.result.equals(ResultType.SUCCESS)) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
@@ -356,7 +358,7 @@ public class LogicProtection {
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.trampledeny");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "event.chunk.trampledeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
@@ -364,7 +366,7 @@ public class LogicProtection {
 			}
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");}
 		}
 	}
 
@@ -377,7 +379,7 @@ public class LogicProtection {
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "event.chunk.bucketdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
@@ -385,7 +387,7 @@ public class LogicProtection {
 			}
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");}
 		}
 	}
 	
@@ -398,15 +400,15 @@ public class LogicProtection {
 			return new TranslatableResult<ResultType>(ResultType.PACKET, "");
 		switch (ownerMatch(player, data)) {
 		case DENY: {
-			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
+			return new TranslatableResult<ResultType>(ResultType.FAILURE, "event.chunk.bucketdeny");
 		}
 		case WHITELIST: {
 			if (!whitelistCheck(item, data, ActionType.BREAK)) {
-				return new TranslatableResult<ResultType>(ResultType.SUCCESS, "event.chunk.bucketdeny");
+				return new TranslatableResult<ResultType>(ResultType.FAILURE, "event.chunk.bucketdeny");
 			}
-			return new TranslatableResult<ResultType>(ResultType.FAILURE, "");
+			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");
 		}
-		default: {return new TranslatableResult<ResultType>(ResultType.FAILURE, "");}
+		default: {return new TranslatableResult<ResultType>(ResultType.SUCCESS, "");}
 		}
 	}
 }

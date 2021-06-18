@@ -25,8 +25,14 @@ public interface ILogicRealEstate {
 	
 	public Map<ChunkPos3D, ChunkData> getCap();
 	
+	public default ChunkData getChunkData(ChunkPos3D pos) {
+		if (getCap().containsKey(pos)) return getCap().get(pos);
+		loadChunkData(pos);
+		return getCap().get(pos);
+	}
+	
 	public default TranslatableResult<ResultType> setWhitelist(ChunkPos3D ck, Map<String, WhitelistEntry> whitelist) {
-		getCap().get(ck).whitelist = whitelist;
+		getChunkData(ck).whitelist = whitelist;
 		saveChunkData();
 		if (whitelist.size() == 0) return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setwhitelist.success.clear");
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setwhitelist.success.set");
@@ -37,50 +43,50 @@ public interface ILogicRealEstate {
 	}
 	
 	public default TranslatableResult<ResultType> updateWhitelistItem(ChunkPos3D ck, String itemRef, WhitelistEntry wlItem) {
-		getCap().get(ck).whitelist.put(itemRef, wlItem);
+		getChunkData(ck).whitelist.put(itemRef, wlItem);
 		saveChunkData();
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.updatewhitelist.success");
 	}
 	
 	public default TranslatableResult<ResultType> removeWhitelistItem(ChunkPos3D ck, String item) {
-		WhitelistEntry wle = getCap().get(ck).whitelist.remove(item);
+		WhitelistEntry wle = getChunkData(ck).whitelist.remove(item);
 		saveChunkData();
 		if (wle == null) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.removewhitelistitem.failure.missing");
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.removewhitelistitem.success");
 	}
 	
-	public default Map<String, WhitelistEntry> getWhitelist(ChunkPos3D ck) {return getCap().get(ck).whitelist;}
+	public default Map<String, WhitelistEntry> getWhitelist(ChunkPos3D ck) {return getChunkData(ck).whitelist;}
 	
 	public default TranslatableResult<ResultType> addPlayer(ChunkPos3D ck, Agent agent) {
-		for (Agent agents : getCap().get(ck).permittedPlayers) {
+		for (Agent agents : getChunkData(ck).permittedPlayers) {
 			if (agents.equals(agent)) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.addplayer.failure");
 		}
-		getCap().get(ck).permittedPlayers.add(agent);
+		getChunkData(ck).permittedPlayers.add(agent);
 		saveChunkData();
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.addplayer.success");
 	}
 	
 	public default TranslatableResult<ResultType> removePlayer(ChunkPos3D ck, Agent agent) {
 		int id = -1;
-		List<Agent> list = getCap().get(ck).permittedPlayers;
+		List<Agent> list = getChunkData(ck).permittedPlayers;
 		for (int i = 0; i < list.size(); i++) {
 			if (list.get(i).equals(agent)) {id = i; break;}
 		}
 		if (id >= 0 ) {
-			getCap().get(ck).permittedPlayers.remove(id);
+			getChunkData(ck).permittedPlayers.remove(id);
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.subplayer.success");
 		}
 		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.subplayer.failure");
 	}
 	
-	public default List<Agent> getPlayers(ChunkPos3D ck) {return getCap().get(ck).permittedPlayers;}
+	public default List<Agent> getPlayers(ChunkPos3D ck) {return getChunkData(ck).permittedPlayers;}
 	
 	public default TranslatableResult<ResultType> expireSublet(ChunkPos3D ck) {
-		getCap().get(ck).renter = new Agent();
-		getCap().get(ck).permittedPlayers = new ArrayList<Agent>();
-		getCap().get(ck).isPublic = false;
-		getCap().get(ck).canExplode = false;
+		getChunkData(ck).renter = new Agent();
+		getChunkData(ck).permittedPlayers = new ArrayList<Agent>();
+		getChunkData(ck).isPublic = false;
+		getChunkData(ck).canExplode = false;
 		saveChunkData();
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.expiresublet.success");
 	}
@@ -99,14 +105,14 @@ public interface ILogicRealEstate {
 	
 	//BEGIN GAME LOGIC SECTION	
 	public default TranslatableResult<ResultType> tempClaim(ChunkPos3D ck, Agent agent) {
-		if (!getCap().get(ck).owner.refID.equals(ComVars.NIL) || !getCap().get(ck).renter.refID.equals(ComVars.NIL)) 
+		if (!getChunkData(ck).owner.refID.equals(ComVars.NIL) || !getChunkData(ck).renter.refID.equals(ComVars.NIL)) 
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.tempclaim.failure.occupied");
 		double balP = LogicMoney.getBalance(agent.refID, LogicMoney.agentType(agent.type));
-		if (balP >= getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE) {
-			LogicMoney.changeBalance(agent.refID, LogicMoney.agentType(agent.type), (-1 * (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE)));
-			getCap().get(ck).renter = agent;
-			getCap().get(ck).permittedPlayers.add(agent);
-			getCap().get(ck).rentEnd = System.currentTimeMillis() + ConfigCore.TEMPCLAIM_DURATION;
+		if (balP >= getChunkData(ck).price * ConfigCore.TEMPCLAIM_RATE) {
+			LogicMoney.changeBalance(agent.refID, LogicMoney.agentType(agent.type), (-1 * (getChunkData(ck).price * ConfigCore.TEMPCLAIM_RATE)));
+			getChunkData(ck).renter = agent;
+			getChunkData(ck).permittedPlayers.add(agent);
+			getChunkData(ck).rentEnd = System.currentTimeMillis() + ConfigCore.TEMPCLAIM_DURATION;
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.tempclaim.success");
 		}
@@ -124,7 +130,7 @@ public interface ILogicRealEstate {
 		Guild guild = LogicGuilds.getGuildByMember(agent.refID);
 		if (!LogicGuilds.hasPermission(guild.guildID, PermKey.CLAIM_LAND.rl, agent.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.guildclaim.failure.permission");
-		if (!getCap().get(ck).owner.refID.equals(ComVars.NIL) && !getCap().get(ck).isForSale) 
+		if (!getChunkData(ck).owner.refID.equals(ComVars.NIL) && !getChunkData(ck).isForSale) 
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.guildclaim.failure.occupied");
 		boolean bordersCore = bordersCoreLand(ck, guild.guildID);
 		if (!bordersCore && !LogicGuilds.hasPermission(guild.guildID, PermKey.OUTPOST_CREATE.rl, agent.refID))
@@ -132,28 +138,28 @@ public interface ILogicRealEstate {
 		//Verify funds available for transaction
 		double outpostFee = (bordersCore ? 0d : ConfigCore.OUTPOST_CREATE_COST);
 		double balG = LogicMoney.getBalance(guild.guildID, LogicMoney.agentType(Type.GUILD));
-		if (balG >= getCap().get(ck).price + outpostFee) {
+		if (balG >= getChunkData(ck).price + outpostFee) {
 			//check if this is a guild to guild sale or purchase from the server
-			if (getCap().get(ck).isForSale && !getCap().get(ck).owner.refID.equals(ComVars.NIL))
+			if (getChunkData(ck).isForSale && !getChunkData(ck).owner.refID.equals(ComVars.NIL))
 				LogicMoney.transferFunds(guild.guildID, LogicMoney.agentType(Type.GUILD)
-						, getCap().get(ck).owner.refID, LogicMoney.agentType(Type.GUILD), getCap().get(ck).price + outpostFee);
-			else LogicMoney.changeBalance(guild.guildID, LogicMoney.agentType(Type.GUILD), -(getCap().get(ck).price + outpostFee));
+						, getChunkData(ck).owner.refID, LogicMoney.agentType(Type.GUILD), getChunkData(ck).price + outpostFee);
+			else LogicMoney.changeBalance(guild.guildID, LogicMoney.agentType(Type.GUILD), -(getChunkData(ck).price + outpostFee));
 			//determine if this is a tempclaim refund otherise leave rental status as is
-			if (!getCap().get(ck).renter.refID.equals(ComVars.NIL) && getCap().get(ck).owner.refID.equals(ComVars.NIL)) {
-				Agent renter = getCap().get(ck).renter;
-				LogicMoney.changeBalance(renter.refID, LogicMoney.agentType(renter.type), getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE);
-				getCap().get(ck).renter = new Agent();
-				getCap().get(ck).rentEnd = System.currentTimeMillis();
-				getCap().get(ck).leasePrice = -1;
-				getCap().get(ck).leaseDuration = 0;
-				getCap().get(ck).permittedPlayers = new ArrayList<Agent>();
-				getCap().get(ck).whitelist = new HashMap<String, WhitelistEntry>();
+			if (!getChunkData(ck).renter.refID.equals(ComVars.NIL) && getChunkData(ck).owner.refID.equals(ComVars.NIL)) {
+				Agent renter = getChunkData(ck).renter;
+				LogicMoney.changeBalance(renter.refID, LogicMoney.agentType(renter.type), getChunkData(ck).price * ConfigCore.TEMPCLAIM_RATE);
+				getChunkData(ck).renter = new Agent();
+				getChunkData(ck).rentEnd = System.currentTimeMillis();
+				getChunkData(ck).leasePrice = -1;
+				getChunkData(ck).leaseDuration = 0;
+				getChunkData(ck).permittedPlayers = new ArrayList<Agent>();
+				getChunkData(ck).whitelist = new HashMap<String, WhitelistEntry>();
 			}
-			getCap().get(ck).owner = guild.asAgent();			
-			getCap().get(ck).permMin = 0;			
-			getCap().get(ck).isPublic = false;
-			getCap().get(ck).isForSale = false;
-			getCap().get(ck).canExplode = false;
+			getChunkData(ck).owner = guild.asAgent();			
+			getChunkData(ck).permMin = 0;			
+			getChunkData(ck).isPublic = false;
+			getChunkData(ck).isForSale = false;
+			getChunkData(ck).canExplode = false;
 			saveChunkData();
 		}
 		else return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.guildclaim.failure.funds");
@@ -168,24 +174,24 @@ public interface ILogicRealEstate {
 	 */
 	default boolean bordersCoreLand(ChunkPos3D ck, UUID guild) {
 		Agent aguild = LogicTrade.get().getTransactor(guild, Type.GUILD, LogicGuilds.getGuildByID(guild).name);
-		return getCap().get(new ChunkPos3D(ck.x-1, ck.y, ck.z)).owner.equals(aguild) ||
-			getCap().get(new ChunkPos3D(ck.x+1, ck.y, ck.z)).owner.equals(aguild) ||
-			getCap().get(new ChunkPos3D(ck.x, ck.y, ck.z-1)).owner.equals(aguild) ||
-			getCap().get(new ChunkPos3D(ck.x, ck.y, ck.z+1)).owner.equals(aguild) ||
-			getCap().get(new ChunkPos3D(ck.x, ck.y-1, ck.z)).owner.equals(aguild) ||
-			getCap().get(new ChunkPos3D(ck.x, ck.y+1, ck.z)).owner.equals(aguild); 
+		return getChunkData(new ChunkPos3D(ck.x-1, ck.y, ck.z)).owner.equals(aguild) ||
+			getChunkData(new ChunkPos3D(ck.x+1, ck.y, ck.z)).owner.equals(aguild) ||
+			getChunkData(new ChunkPos3D(ck.x, ck.y, ck.z-1)).owner.equals(aguild) ||
+			getChunkData(new ChunkPos3D(ck.x, ck.y, ck.z+1)).owner.equals(aguild) ||
+			getChunkData(new ChunkPos3D(ck.x, ck.y-1, ck.z)).owner.equals(aguild) ||
+			getChunkData(new ChunkPos3D(ck.x, ck.y+1, ck.z)).owner.equals(aguild); 
 	}
 	
 	public default TranslatableResult<ResultType> extendTemporaryTime(ChunkPos3D ck, UUID player) {
-		boolean isSublet = !getCap().get(ck).owner.refID.equals(ComVars.NIL);
+		boolean isSublet = !getChunkData(ck).owner.refID.equals(ComVars.NIL);
 		double balP = LogicMoney.getBalance(player, AccountType.PLAYER.rl);
 		double cost = (isSublet 
-				? (getCap().get(ck).leasePrice)
-				: (getCap().get(ck).price * ConfigCore.TEMPCLAIM_RATE)) 
-				*getCap().get(ck).permittedPlayers.size();
+				? (getChunkData(ck).leasePrice)
+				: (getChunkData(ck).price * ConfigCore.TEMPCLAIM_RATE)) 
+				*getChunkData(ck).permittedPlayers.size();
 		if (balP >= cost) {
 			LogicMoney.changeBalance(player, AccountType.PLAYER.rl, -cost);
-			getCap().get(ck).rentEnd += isSublet ? getCap().get(ck).leaseDuration * 3600000l : ConfigCore.TEMPCLAIM_DURATION;
+			getChunkData(ck).rentEnd += isSublet ? getChunkData(ck).leaseDuration * 3600000l : ConfigCore.TEMPCLAIM_DURATION;
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.extendclaim.success");
 		}
@@ -193,56 +199,56 @@ public interface ILogicRealEstate {
 	}
 	
 	public default TranslatableResult<ResultType> setSubletData(ChunkPos3D ck, Agent agent, double price, int duration) {
-		Guild gid = LogicGuilds.getGuildByID(getCap().get(ck).owner.refID);
+		Guild gid = LogicGuilds.getGuildByID(getChunkData(ck).owner.refID);
 		Agent guild = LogicTrade.get().getTransactor(gid.guildID, Type.GUILD, gid.name);
 		if (!LogicGuilds.hasPermission(guild.refID, PermKey.SUBLET_MANAGE.rl, agent.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.updatesublet.failure.permission");
-		if (price >= 0 && !getCap().get(ck).renter.refID.equals(ComVars.NIL))
+		if (price >= 0 && !getChunkData(ck).renter.refID.equals(ComVars.NIL))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.updatesublet.failure.contracted");
-		getCap().get(ck).leasePrice = price;
-		getCap().get(ck).leaseDuration = duration;
+		getChunkData(ck).leasePrice = price;
+		getChunkData(ck).leaseDuration = duration;
 		saveChunkData();
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.updatesublet.success");
 	}
 	
 	public default TranslatableResult<ResultType> disableSublet(ChunkPos3D ck, Agent agent) {
-		long gracePeriod = (long)(getCap().get(ck).leaseDuration * 3600000 * ConfigCore.TENANT_PROTECTION_RATIO);
-		long expiration = getCap().get(ck).rentEnd;
+		long gracePeriod = (long)(getChunkData(ck).leaseDuration * 3600000 * ConfigCore.TENANT_PROTECTION_RATIO);
+		long expiration = getChunkData(ck).rentEnd;
 		if (expiration > System.currentTimeMillis() && System.currentTimeMillis() > (expiration - gracePeriod))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.disablesublet.failure.protected");
 		return setSubletData(ck, agent, -1, 0);
 	}	
 	
 	public default TranslatableResult<ResultType> rentSublet(ChunkPos3D ck, Agent agent) {
-		if (!getCap().get(ck).renter.refID.equals(ComVars.NIL))
+		if (!getChunkData(ck).renter.refID.equals(ComVars.NIL))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.expiresublet.failure.occupied");
 		double pbal = LogicMoney.getBalance(agent.refID, LogicMoney.agentType(agent.type));
-		if (pbal < getCap().get(ck).leasePrice)
+		if (pbal < getChunkData(ck).leasePrice)
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.expiresublet.failure.funds");
-		LogicMoney.changeBalance(agent.refID, LogicMoney.agentType(agent.type), -getCap().get(ck).leasePrice);
-		getCap().get(ck).renter = agent;
-		getCap().get(ck).rentEnd = System.currentTimeMillis() + ((long)getCap().get(ck).leaseDuration * 3600000l);
+		LogicMoney.changeBalance(agent.refID, LogicMoney.agentType(agent.type), -getChunkData(ck).leasePrice);
+		getChunkData(ck).renter = agent;
+		getChunkData(ck).rentEnd = System.currentTimeMillis() + ((long)getChunkData(ck).leaseDuration * 3600000l);
 		addPlayer(ck, agent); //save executed in this method. no need to duplicate
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.rentsublet.success");
 	}
 	
 	public default TranslatableResult<ResultType> addPermittedPlayer(ChunkPos3D ck, Agent exec, Agent ref) {
-		boolean isPermitted = (getCap().get(ck).renter.equals(exec) ||
-				LogicGuilds.hasPermission(getCap().get(ck).owner.refID, PermKey.SUBLET_MANAGE.rl, exec.refID));
+		boolean isPermitted = (getChunkData(ck).renter.equals(exec) ||
+				LogicGuilds.hasPermission(getChunkData(ck).owner.refID, PermKey.SUBLET_MANAGE.rl, exec.refID));
 		if (!isPermitted) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.addsubletmembers.failure.permission");
 		return addPlayer(ck, ref);
 	}
 	
 	public default TranslatableResult<ResultType> removePermittedPlayer(ChunkPos3D ck, Agent exec, Agent ref) {
-		boolean isPermitted = (getCap().get(ck).renter.equals(exec) ||
-				LogicGuilds.hasPermission(getCap().get(ck).owner.refID, PermKey.SUBLET_MANAGE.rl, exec.refID));
+		boolean isPermitted = (getChunkData(ck).renter.equals(exec) ||
+				LogicGuilds.hasPermission(getChunkData(ck).owner.refID, PermKey.SUBLET_MANAGE.rl, exec.refID));
 		if (!isPermitted) return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.removesubletmembers.failure.permission");
 		return removePlayer(ck, ref);
 	}
 	
 	public default TranslatableResult<ResultType> setPublic(ChunkPos3D ck, Agent exec, boolean setting) {
 		if (LogicGuilds.hasPermission(LogicGuilds.getGuildByMember(exec.refID).guildID, PermKey.SUBLET_MANAGE.rl, exec.refID)) {
-			getCap().get(ck).isPublic = setting;
+			getChunkData(ck).isPublic = setting;
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setpublic.success");
 		}
@@ -251,7 +257,7 @@ public interface ILogicRealEstate {
 	
 	public default TranslatableResult<ResultType> setExplosions(ChunkPos3D ck, Agent exec, boolean setting) {
 		if (LogicGuilds.hasPermission(LogicGuilds.getGuildByMember(exec.refID).guildID, PermKey.SUBLET_MANAGE.rl, exec.refID)) {
-			getCap().get(ck).canExplode = setting;
+			getChunkData(ck).canExplode = setting;
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setexplode.success");
 		}
@@ -260,7 +266,7 @@ public interface ILogicRealEstate {
 	
 	public default TranslatableResult<ResultType> setMinRank(ChunkPos3D ck, Agent exec, int setting) {
 		if (LogicGuilds.hasPermission(LogicGuilds.getGuildByMember(exec.refID).guildID, PermKey.SUBLET_MANAGE.rl, exec.refID)) {
-			getCap().get(ck).permMin = setting;
+			getChunkData(ck).permMin = setting;
 			saveChunkData();
 			return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setminrank.success");
 		}
@@ -270,22 +276,22 @@ public interface ILogicRealEstate {
 	public default TranslatableResult<ResultType> setChunkForSale(ChunkPos3D ck, Agent exec, double value) {
 		if (!LogicGuilds.hasPermission(LogicGuilds.getGuildByMember(exec.refID).guildID, PermKey.CLAIM_SELL.rl, exec.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.setforsale.failure.permission");
-		getCap().get(ck).isForSale = true;
-		getCap().get(ck).price = value;
+		getChunkData(ck).isForSale = true;
+		getChunkData(ck).price = value;
 		return new TranslatableResult<ResultType>(ResultType.SUCCESS, "lib.realestate.setforsale.success");
 	}
 	
 	public default TranslatableResult<ResultType> abandonChunk(ChunkPos3D ck, Agent exec) {
 		if (!LogicGuilds.hasPermission(LogicGuilds.getGuildByMember(exec.refID).guildID, PermKey.CLAIM_ABANDON.rl, exec.refID))
 			return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.abandon.failure.permission");
-		getCap().get(ck).owner = new Agent();
-		getCap().get(ck).leasePrice = -1;
-		getCap().get(ck).leaseDuration = 0;
-		getCap().get(ck).permMin = 0;
-		getCap().get(ck).isPublic = false;
-		getCap().get(ck).isForSale = false;
-		getCap().get(ck).canExplode = false;
-		getCap().get(ck).whitelist = new HashMap<String, WhitelistEntry>();
+		getChunkData(ck).owner = new Agent();
+		getChunkData(ck).leasePrice = -1;
+		getChunkData(ck).leaseDuration = 0;
+		getChunkData(ck).permMin = 0;
+		getChunkData(ck).isPublic = false;
+		getChunkData(ck).isForSale = false;
+		getChunkData(ck).canExplode = false;
+		getChunkData(ck).whitelist = new HashMap<String, WhitelistEntry>();
 		return new TranslatableResult<ResultType>(ResultType.FAILURE, "lib.realestate.abandon.success");
 	}
 	
